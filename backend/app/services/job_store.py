@@ -56,8 +56,16 @@ def get_job_by_id(job_id: str) -> Optional[JobPublic]:
             return j
     return None
 
-def get_open_jobs(search: str | None = None, category: str | None = None, city: str | None = None) -> List[JobPublic]:
+def get_open_jobs(
+    search: str | None = None,
+    category: str | None = None,
+    city: str | None = None,
+    exclude_job_ids: list[str] | None = None,
+) -> List[JobPublic]:
     jobs = [job for job in _jobs if job.status == "OPEN"]
+
+    if exclude_job_ids:
+        jobs = [job for job in jobs if job.id not in exclude_job_ids]
 
     if search:
         q = search.strip().lower()
@@ -78,3 +86,10 @@ def get_open_jobs(search: str | None = None, category: str | None = None, city: 
 def delete_jobs_by_poster(poster_user_id: str) -> None:
     global _jobs
     _jobs = [job for job in _jobs if job.poster_user_id != poster_user_id]
+
+def delete_job(job_id: str) -> bool:
+    global _jobs
+    before = len(_jobs)
+    _jobs = [job for job in _jobs if job.id != job_id]
+    return len(_jobs) < before
+

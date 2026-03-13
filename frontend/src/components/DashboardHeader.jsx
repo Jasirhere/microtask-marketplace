@@ -49,7 +49,7 @@ export default function DashboardHeader() {
     navigate("/login");
   }
 
-  function handleAfterDelete() {
+  function handleAfterDeactivate() {
     logout();
     navigate("/login");
   }
@@ -65,7 +65,7 @@ export default function DashboardHeader() {
             <h1 className="text-3xl font-semibold text-slate-900">TaskMarket</h1>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <div className="flex rounded-2xl border bg-white p-1 shadow-sm">
               <button
                 onClick={goToPoster}
@@ -90,6 +90,24 @@ export default function DashboardHeader() {
               </button>
             </div>
 
+            {user?.current_mode === "worker" && (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate("/worker/jobs")}
+                  className="text-sm font-medium text-slate-700 hover:text-slate-900"
+                >
+                  Find Jobs
+                </button>
+
+                <button
+                  onClick={() => navigate("/worker/my-jobs")}
+                  className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-200"
+                >
+                  My Jobs
+                </button>
+              </div>
+            )}
+
             <AccountMenu
               photoSrc={activePhoto}
               fallbackLabel={user?.email?.[0]?.toUpperCase() || "U"}
@@ -103,7 +121,7 @@ export default function DashboardHeader() {
       <AccountSettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
-        onAfterDelete={handleAfterDelete}
+        onAfterDeactivate={handleAfterDeactivate}
       />
     </>
   );

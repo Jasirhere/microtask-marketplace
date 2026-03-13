@@ -85,3 +85,6 @@ class JobPublic(BaseModel):
 
     status: JobStatus
     created_at: datetime
+    
+    poster_name: Optional[str] = None
+    poster_photo_data_url: Optional[str] = None
