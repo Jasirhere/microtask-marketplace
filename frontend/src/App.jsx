@@ -11,7 +11,7 @@ import ProtectedRoute from "./auth/ProtectedRoute";
 import PosterJobDetail from "./pages/PosterJobDetail";
 import WorkerJobsFeed from "./pages/WorkerJobsFeed";
 import WorkerJobDetail from "./pages/WorkerJobDetail";
-
+import WorkerMyJobs from "./pages/WorkerMyJobs";
 
 export default function App() {
   return (
@@ -98,6 +98,15 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/worker/my-jobs"
+        element={
+          <ProtectedRoute>
+            <WorkerMyJobs />
+          </ProtectedRoute>
+        }
+      />
+      
 
 
 

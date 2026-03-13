@@ -29,3 +29,9 @@ def save_user(user: UserInDB) -> UserInDB:
 
 def delete_user(email: str) -> None:
     _users_by_email.pop(email.lower(), None)
+
+def get_by_id(user_id: str):
+    for user in _users_by_email.values():
+        if user.id == user_id:
+            return user
+    return None    

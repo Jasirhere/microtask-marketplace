@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getOpenJobs } from "../api/jobs";
+import { getMyApplications } from "../api/applications";
 import DashboardHeader from "../components/DashboardHeader";
+import ApplyJobModal from "../components/ApplyJobModal";
 
 
 function formatTimeAgo(dateString) {
@@ -51,10 +53,39 @@ export default function WorkerJobsFeed() {
   const [selectedLocations, setSelectedLocations] = useState([]);
   const [budgetMin, setBudgetMin] = useState(0);
   const [budgetMax, setBudgetMax] = useState(5000);
+  const [myApplications, setMyApplications] = useState([]);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     loadJobs();
+    loadMyApplications();
   }, []);
+
+  function hasApplied(jobId) {
+    return myApplications.some((app) => app.job_id === jobId);
+  }
+
+  function handleApplyClick(job) {
+    setSelectedJob(job);
+    setShowApplyModal(true);
+  }
+
+  async function handleApplySuccess() {
+    setShowApplyModal(false);
+    setSuccessMessage("Successfully applied to this job.");
+    await loadMyApplications();
+  }
+
+  async function loadMyApplications() {
+    try {
+      const data = await getMyApplications();
+      setMyApplications(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   async function loadJobs() {
     try {
@@ -122,10 +153,10 @@ export default function WorkerJobsFeed() {
   }, [jobs, search, selectedCategories, selectedLocations, budgetMin, budgetMax]);
 
   return (
-  <div className="min-h-screen bg-slate-50">
-    <DashboardHeader />
+    <div className="min-h-screen bg-slate-50">
+      <DashboardHeader />
 
-    <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold text-slate-900">Find Jobs</h1>
@@ -134,7 +165,7 @@ export default function WorkerJobsFeed() {
             </p>
           </div>
 
-          
+
         </div>
 
         {error && (
@@ -267,7 +298,11 @@ export default function WorkerJobsFeed() {
                       <h3 className="text-2xl font-semibold leading-snug text-slate-900">
                         {job.title}
                       </h3>
-
+                      {successMessage && (
+                        <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-4 text-green-700">
+                          {successMessage}
+                        </div>
+                      )}
                       <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-700">
                         {job.category}
                       </span>
@@ -298,11 +333,21 @@ export default function WorkerJobsFeed() {
                         View Details
                       </button>
 
-                      <button
-                        className="rounded-xl bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-700"
-                      >
-                        Apply Now
-                      </button>
+                      {hasApplied(job.id) ? (
+                        <button
+                          disabled
+                          className="rounded-xl bg-green-100 px-4 py-3 font-medium text-green-700"
+                        >
+                          ✓ Applied
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleApplyClick(job)}
+                          className="rounded-xl bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-700"
+                        >
+                          Apply Now
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -311,6 +356,15 @@ export default function WorkerJobsFeed() {
           </div>
         </div>
       </div>
+      {selectedJob && (
+        <ApplyJobModal
+          isOpen={showApplyModal}
+          onClose={() => setShowApplyModal(false)}
+          job={selectedJob}
+          onSuccess={handleApplySuccess}
+        />
+      )}
     </div>
   );
+  
 }

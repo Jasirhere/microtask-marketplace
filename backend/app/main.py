@@ -7,6 +7,7 @@ from app.api.routes.profiles import router as profiles_router
 from app.api.routes.mode import router as mode_router
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.account import router as account_router
+from app.api.routes.applications import router as applications_router
 app = FastAPI(title="MicroTask Marketplace API")
 
 app.add_middleware(
@@ -23,6 +24,7 @@ app.include_router(profiles_router)
 app.include_router(mode_router)
 app.include_router(jobs_router)
 app.include_router(account_router)
+app.include_router(applications_router)
 @app.get("/health")
 def health():
     return {"status": "ok"}

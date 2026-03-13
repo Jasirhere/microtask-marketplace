@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getJobById } from "../api/jobs";
+import { getJobById, deleteJob } from "../api/jobs";
 import JobStatusBadge from "../components/JobStatusBadge";
 
 function formatTimeAgo(dateString) {
@@ -39,6 +39,17 @@ export default function PosterJobDetail() {
       setError(err?.response?.data?.detail || "Failed to load job");
     } finally {
       setLoading(false);
+    }
+  }
+  async function handleDeleteJob() {
+    const confirmed = window.confirm("Do you want to delete this gig posted?");
+    if (!confirmed) return;
+
+    try {
+      await deleteJob(jobId);
+      navigate("/poster");
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Failed to delete job");
     }
   }
 
@@ -83,7 +94,10 @@ export default function PosterJobDetail() {
               <button className="rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
                 Edit
               </button>
-              <button className="rounded-xl border px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+              <button
+                onClick={handleDeleteJob}
+                className="rounded-xl border px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              >
                 Close Job
               </button>
             </div>
