@@ -12,6 +12,7 @@ import PosterJobDetail from "./pages/PosterJobDetail";
 import WorkerJobsFeed from "./pages/WorkerJobsFeed";
 import WorkerJobDetail from "./pages/WorkerJobDetail";
 import WorkerMyJobs from "./pages/WorkerMyJobs";
+import WorkerAssignedJobDetail from "./pages/WorkerAssignedJobDetail";
 
 export default function App() {
   return (
@@ -106,7 +107,14 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      
+      <Route
+        path="/worker/active-jobs/:jobId"
+        element={
+          <ProtectedRoute>
+            <WorkerAssignedJobDetail />
+          </ProtectedRoute>
+        }
+      />
 
 
 

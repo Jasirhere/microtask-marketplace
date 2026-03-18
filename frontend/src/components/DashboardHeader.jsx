@@ -4,6 +4,7 @@ import { switchMode } from "../api/profile";
 import { useAuth } from "../auth/AuthContext";
 import AccountMenu from "./AccountMenu";
 import AccountSettingsModal from "./AccountSettingsModal";
+import NotificationsDropdown from "./NotificationsDropdown";
 
 export default function DashboardHeader() {
   const { user, reload, logout } = useAuth();
@@ -69,22 +70,20 @@ export default function DashboardHeader() {
             <div className="flex rounded-2xl border bg-white p-1 shadow-sm">
               <button
                 onClick={goToPoster}
-                className={`rounded-xl px-5 py-2 text-sm font-medium ${
-                  user?.current_mode === "poster"
+                className={`rounded-xl px-5 py-2 text-sm font-medium ${user?.current_mode === "poster"
                     ? "bg-blue-600 text-white"
                     : "text-slate-700 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 Poster
               </button>
 
               <button
                 onClick={goToWorker}
-                className={`rounded-xl px-5 py-2 text-sm font-medium ${
-                  user?.current_mode === "worker"
+                className={`rounded-xl px-5 py-2 text-sm font-medium ${user?.current_mode === "worker"
                     ? "bg-blue-600 text-white"
                     : "text-slate-700 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 Worker
               </button>
@@ -107,7 +106,9 @@ export default function DashboardHeader() {
                 </button>
               </div>
             )}
-
+            {(user?.current_mode === "poster" || user?.current_mode === "worker") && (
+              <NotificationsDropdown />
+            )}
             <AccountMenu
               photoSrc={activePhoto}
               fallbackLabel={user?.email?.[0]?.toUpperCase() || "U"}

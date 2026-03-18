@@ -74,8 +74,8 @@ export default function WorkerMyJobs() {
     activeTab === "ACTIVE"
       ? activeJobs
       : activeTab === "APPLIED"
-      ? appliedJobs
-      : completedJobs;
+        ? appliedJobs
+        : completedJobs;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -120,33 +120,30 @@ export default function WorkerMyJobs() {
         <div className="mb-8 flex rounded-2xl border bg-white p-1">
           <button
             onClick={() => setActiveTab("ACTIVE")}
-            className={`flex-1 rounded-xl px-4 py-3 font-medium ${
-              activeTab === "ACTIVE"
+            className={`flex-1 rounded-xl px-4 py-3 font-medium ${activeTab === "ACTIVE"
                 ? "bg-blue-600 text-white"
                 : "text-slate-700 hover:bg-slate-50"
-            }`}
+              }`}
           >
             Active ({activeJobs.length})
           </button>
 
           <button
             onClick={() => setActiveTab("APPLIED")}
-            className={`flex-1 rounded-xl px-4 py-3 font-medium ${
-              activeTab === "APPLIED"
+            className={`flex-1 rounded-xl px-4 py-3 font-medium ${activeTab === "APPLIED"
                 ? "bg-blue-600 text-white"
                 : "text-slate-700 hover:bg-slate-50"
-            }`}
+              }`}
           >
             Applied ({appliedJobs.length})
           </button>
 
           <button
             onClick={() => setActiveTab("COMPLETED")}
-            className={`flex-1 rounded-xl px-4 py-3 font-medium ${
-              activeTab === "COMPLETED"
+            className={`flex-1 rounded-xl px-4 py-3 font-medium ${activeTab === "COMPLETED"
                 ? "bg-blue-600 text-white"
                 : "text-slate-700 hover:bg-slate-50"
-            }`}
+              }`}
           >
             Completed ({completedJobs.length})
           </button>
@@ -180,10 +177,9 @@ export default function WorkerMyJobs() {
                   </h3>
 
                   <span
-                    className={`rounded-full px-3 py-1 text-sm font-medium ${
-                      STATUS_STYLES[item.application_status] ||
+                    className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_STYLES[item.application_status] ||
                       "bg-slate-100 text-slate-700"
-                    }`}
+                      }`}
                   >
                     {item.application_status}
                   </span>
@@ -219,7 +215,13 @@ export default function WorkerMyJobs() {
                 <div className="border-t pt-4">
                   <div className="grid grid-cols-1 gap-3">
                     <button
-                      onClick={() => navigate(`/worker/jobs/${item.job_id}`)}
+                      onClick={() =>
+                        navigate(
+                          item.application_status === "SELECTED"
+                            ? `/worker/active-jobs/${item.job_id}`
+                            : `/worker/jobs/${item.job_id}`
+                        )
+                      }
                       className="rounded-xl border px-4 py-2 font-medium hover:bg-slate-50"
                     >
                       View

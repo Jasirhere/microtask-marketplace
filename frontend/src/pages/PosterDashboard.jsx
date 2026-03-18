@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { getMyJobs, deleteJob } from "../api/jobs";
+import { getApplicationsForJob } from "../api/applications";
 import DashboardHeader from "../components/DashboardHeader";
 import Modal from "../components/Modal";
 import CreateJobForm from "../components/CreateJobForm";
 import JobStatusBadge from "../components/JobStatusBadge";
-import { getMyJobs, deleteJob } from "../api/jobs";
+import ApplicantsModal from "../components/ApplicantsModal";
 
 function formatTimeAgo(dateString) {
   const created = new Date(dateString);
@@ -28,7 +30,12 @@ export default function PosterDashboard() {
   const [jobs, setJobs] = useState([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [jobsError, setJobsError] = useState("");
+
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+  const [selectedApplicantsJob, setSelectedApplicantsJob] = useState(null);
+
+  const [applicantCounts, setApplicantCounts] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -41,18 +48,47 @@ export default function PosterDashboard() {
     loadJobs();
   }, [user, navigate]);
 
+  async function loadApplicantCounts(jobList) {
+    try {
+      const counts = {};
+
+      for (const job of jobList) {
+        const items = await getApplicationsForJob(job.id);
+        counts[job.id] = items.length;
+      }
+
+      setApplicantCounts(counts);
+    } catch (err) {
+      console.error("Failed to load applicant counts", err);
+    }
+  }
+
   async function loadJobs() {
     try {
       setJobsError("");
       setLoadingJobs(true);
+
       const data = await getMyJobs();
       setJobs(data);
+
+      await loadApplicantCounts(data);
     } catch (err) {
       setJobsError(err?.response?.data?.detail || "Failed to load jobs");
     } finally {
       setLoadingJobs(false);
     }
   }
+
+  function handleCreateSuccess() {
+    setShowCreateModal(false);
+    loadJobs();
+  }
+
+  function handleEditSuccess() {
+    setEditingJob(null);
+    loadJobs();
+  }
+
   async function handleDeleteJob(jobId) {
     const confirmed = window.confirm("Do you want to delete this gig posted?");
     if (!confirmed) return;
@@ -65,12 +101,6 @@ export default function PosterDashboard() {
     }
   }
 
-  function handleCreateSuccess() {
-    setShowCreateModal(false);
-    loadJobs();
-  }
-
-
   if (!user?.poster_profile) {
     return <div className="p-6">Loading poster dashboard...</div>;
   }
@@ -82,7 +112,9 @@ export default function PosterDashboard() {
       <div className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900">Poster Dashboard</h1>
+            <h1 className="text-4xl font-bold text-slate-900">
+              Poster Dashboard
+            </h1>
             <p className="mt-2 text-lg text-slate-600">
               Manage your posted jobs and find workers
             </p>
@@ -170,6 +202,12 @@ export default function PosterDashboard() {
                     : job.description}
                 </p>
 
+                <div className="mb-4 text-sm font-medium text-slate-700">
+                  {(applicantCounts[job.id] || 0) > 0
+                    ? `${applicantCounts[job.id]} worker(s) applied`
+                    : "No applicants yet"}
+                </div>
+
                 <div className="mb-5 grid gap-3 text-sm text-slate-700">
                   <div className="flex items-center gap-2">
                     <span>📍</span>
@@ -194,7 +232,7 @@ export default function PosterDashboard() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-4 gap-3">
                     <button
                       onClick={() => navigate(`/poster/jobs/${job.id}`)}
                       className="rounded-xl border px-4 py-2 font-medium hover:bg-slate-50"
@@ -202,7 +240,17 @@ export default function PosterDashboard() {
                       View
                     </button>
 
-                    <button className="rounded-xl border px-4 py-2 font-medium hover:bg-slate-50">
+                    <button
+                      onClick={() => setSelectedApplicantsJob(job)}
+                      className="rounded-xl border px-4 py-2 font-medium hover:bg-slate-50"
+                    >
+                      Applicants
+                    </button>
+
+                    <button
+                      onClick={() => setEditingJob(job)}
+                      className="rounded-xl border px-4 py-2 font-medium hover:bg-slate-50"
+                    >
                       Edit
                     </button>
 
@@ -230,6 +278,29 @@ export default function PosterDashboard() {
           onCancel={() => setShowCreateModal(false)}
         />
       </Modal>
+
+      <Modal
+        isOpen={!!editingJob}
+        onClose={() => setEditingJob(null)}
+        title="Edit Job"
+      >
+        {editingJob && (
+          <CreateJobForm
+            mode="edit"
+            initialValues={editingJob}
+            onSuccess={handleEditSuccess}
+            onCancel={() => setEditingJob(null)}
+          />
+        )}
+      </Modal>
+
+      {selectedApplicantsJob && (
+        <ApplicantsModal
+          isOpen={!!selectedApplicantsJob}
+          onClose={() => setSelectedApplicantsJob(null)}
+          job={selectedApplicantsJob}
+        />
+      )}
     </div>
   );
 }

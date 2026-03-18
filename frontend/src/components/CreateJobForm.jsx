@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createJob, getJobCategories } from "../api/jobs";
+import { createJob, getJobCategories, updateJob } from "../api/jobs";
 
 const COUNTRY_OPTIONS = ["Pakistan", "United Kingdom", "UAE"];
 
@@ -19,7 +19,12 @@ const CITY_OPTIONS = {
   UAE: ["Dubai", "Abu Dhabi", "Sharjah"],
 };
 
-export default function CreateJobForm({ onSuccess, onCancel }) {
+export default function CreateJobForm({
+  onSuccess,
+  onCancel,
+  initialValues = null,
+  mode = "create",
+}) {
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
@@ -56,7 +61,38 @@ export default function CreateJobForm({ onSuccess, onCancel }) {
       try {
         const data = await getJobCategories();
         setCategories(data);
-        if (data.length > 0) {
+
+        if (initialValues) {
+          setForm({
+            title: initialValues.title || "",
+            description: initialValues.description || "",
+            category: initialValues.category || (data[0] || ""),
+
+            country: initialValues.country || "",
+            city: initialValues.city || "",
+            area: initialValues.area || "",
+            address_details: initialValues.address_details || "",
+            latitude: initialValues.latitude ?? null,
+            longitude: initialValues.longitude ?? null,
+
+            budget_min: initialValues.budget_min ?? "",
+            budget_max: initialValues.budget_max ?? "",
+
+            deadline_value: initialValues.deadline_value ?? "",
+            deadline_unit: initialValues.deadline_unit || "days",
+
+            estimated_duration_value:
+              initialValues.estimated_duration_value ?? "",
+            estimated_duration_unit:
+              initialValues.estimated_duration_unit || "hours",
+
+            skills_required: Array.isArray(initialValues.skills_required)
+              ? initialValues.skills_required.join(", ")
+              : "",
+
+            notes: initialValues.notes || "",
+          });
+        } else if (data.length > 0) {
           setForm((prev) => ({
             ...prev,
             category: data[0],
@@ -70,7 +106,7 @@ export default function CreateJobForm({ onSuccess, onCancel }) {
     }
 
     loadCategories();
-  }, []);
+  }, [initialValues]);
 
   const cityOptions = form.country ? CITY_OPTIONS[form.country] || [] : [];
 
@@ -128,10 +164,17 @@ export default function CreateJobForm({ onSuccess, onCancel }) {
         notes: form.notes.trim() || null,
       };
 
-      await createJob(payload);
+      if (mode === "edit" && initialValues?.id) {
+        await updateJob(initialValues.id, payload);
+      } else {
+        await createJob(payload);
+      }
+
       onSuccess();
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to create job");
+      console.error("Create/update job failed:", err);
+      console.error("Response data:", err?.response?.data);
+      setError(err?.response?.data?.detail || "Failed to save job");
     } finally {
       setLoading(false);
     }
@@ -220,7 +263,9 @@ export default function CreateJobForm({ onSuccess, onCancel }) {
             required
             disabled={!form.country}
           >
-            <option value="">{form.country ? "Select City" : "Select Country First"}</option>
+            <option value="">
+              {form.country ? "Select City" : "Select Country First"}
+            </option>
             {cityOptions.map((city) => (
               <option key={city} value={city}>
                 {city}
@@ -230,7 +275,9 @@ export default function CreateJobForm({ onSuccess, onCancel }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Area / Locality</label>
+          <label className="mb-1 block text-sm font-medium">
+            Area / Locality
+          </label>
           <input
             name="area"
             value={form.area}
@@ -242,7 +289,9 @@ export default function CreateJobForm({ onSuccess, onCancel }) {
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-sm font-medium">Address Details</label>
+          <label className="mb-1 block text-sm font-medium">
+            Address Details
+          </label>
           <textarea
             name="address_details"
             value={form.address_details}
@@ -305,7 +354,9 @@ export default function CreateJobForm({ onSuccess, onCancel }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Estimated Duration</label>
+          <label className="mb-1 block text-sm font-medium">
+            Estimated Duration
+          </label>
           <div className="flex gap-2">
             <input
               type="number"
@@ -329,7 +380,9 @@ export default function CreateJobForm({ onSuccess, onCancel }) {
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-sm font-medium">Skills Required</label>
+          <label className="mb-1 block text-sm font-medium">
+            Skills Required
+          </label>
           <input
             name="skills_required"
             value={form.skills_required}
@@ -369,7 +422,13 @@ export default function CreateJobForm({ onSuccess, onCancel }) {
           disabled={loading}
           className="rounded-xl bg-blue-600 px-5 py-2 text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          {loading ? "Creating..." : "Create Job"}
+          {loading
+            ? mode === "edit"
+              ? "Saving..."
+              : "Creating..."
+            : mode === "edit"
+            ? "Save Changes"
+            : "Create Job"}
         </button>
       </div>
     </form>
