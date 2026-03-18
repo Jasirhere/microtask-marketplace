@@ -93,3 +93,8 @@ def delete_job(job_id: str) -> bool:
     _jobs = [job for job in _jobs if job.id != job_id]
     return len(_jobs) < before
 
+def set_job_status(job_id: str, new_status: str):
+    job = get_job_by_id(job_id)
+    if job:
+        job.status = new_status
+    return job

@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getJobById, deleteJob } from "../api/jobs";
 import JobStatusBadge from "../components/JobStatusBadge";
+import Modal from "../components/Modal";
+import CreateJobForm from "../components/CreateJobForm";
+import ApplicantsModal from "../components/ApplicantsModal";
 
 function formatTimeAgo(dateString) {
   const created = new Date(dateString);
@@ -17,6 +20,15 @@ function formatTimeAgo(dateString) {
   return `${days} days ago`;
 }
 
+function InfoItem({ label, value }) {
+  return (
+    <div>
+      <p className="mb-1 text-sm text-slate-500">{label}</p>
+      <p className="text-lg font-semibold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
 export default function PosterJobDetail() {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -24,6 +36,8 @@ export default function PosterJobDetail() {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showApplicantsModal, setShowApplicantsModal] = useState(false);
 
   useEffect(() => {
     loadJob();
@@ -41,6 +55,7 @@ export default function PosterJobDetail() {
       setLoading(false);
     }
   }
+
   async function handleDeleteJob() {
     const confirmed = window.confirm("Do you want to delete this gig posted?");
     if (!confirmed) return;
@@ -51,6 +66,11 @@ export default function PosterJobDetail() {
     } catch (err) {
       setError(err?.response?.data?.detail || "Failed to delete job");
     }
+  }
+
+  async function handleEditSuccess() {
+    setShowEditModal(false);
+    await loadJob();
   }
 
   if (loading) {
@@ -70,6 +90,9 @@ export default function PosterJobDetail() {
   if (!job) {
     return <div className="p-6">Job not found.</div>;
   }
+
+  const showAssignedWorker =
+    job.status === "ASSIGNED" && job.selected_worker_name;
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-8">
@@ -91,9 +114,13 @@ export default function PosterJobDetail() {
             </div>
 
             <div className="flex gap-3">
-              <button className="rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50">
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50"
+              >
                 Edit
               </button>
+
               <button
                 onClick={handleDeleteJob}
                 className="rounded-xl border px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
@@ -103,66 +130,95 @@ export default function PosterJobDetail() {
             </div>
           </div>
 
-          <div className="mb-8 grid gap-6 border-b pb-8 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <p className="mb-1 text-sm text-slate-500">Budget</p>
-              <p className="text-lg font-semibold text-slate-900">
-                {job.budget_min} - {job.budget_max}
-              </p>
-            </div>
+          {showAssignedWorker && (
+            <div className="mb-8 rounded-2xl border border-sky-200 bg-sky-50/60 p-5">
+              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700">
+                <span>👤</span>
+                <span>Worker Assigned</span>
+              </div>
 
-            <div>
-              <p className="mb-1 text-sm text-slate-500">Location</p>
-              <p className="text-lg font-semibold text-slate-900">
-                {job.area}, {job.city}, {job.country}
-              </p>
-              {job.address_details && (
-                <p className="mt-1 text-sm text-slate-600">
-                  {job.address_details}
-                </p>
-              )}
-            </div>
+              <div className="flex items-start gap-4">
+                {job.selected_worker_photo_data_url ? (
+                  <img
+                    src={job.selected_worker_photo_data_url}
+                    alt={job.selected_worker_name}
+                    className="h-16 w-16 rounded-full object-cover border"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border bg-slate-100 text-xl font-semibold text-slate-600">
+                    {job.selected_worker_name?.[0]?.toUpperCase() || "W"}
+                  </div>
+                )}
 
-            <div>
-              <p className="mb-1 text-sm text-slate-500">Category</p>
-              <p className="text-lg font-semibold text-slate-900">
-                {job.category}
-              </p>
-            </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-semibold text-slate-900">
+                    {job.selected_worker_name}
+                  </h2>
 
-            <div>
-              <p className="mb-1 text-sm text-slate-500">Posted</p>
-              <p className="text-lg font-semibold text-slate-900">
-                {formatTimeAgo(job.created_at)}
-              </p>
-            </div>
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+                    {job.selected_worker_bio ||
+                      "Experienced worker assigned to this project."}
+                  </p>
 
-            <div>
-              <p className="mb-1 text-sm text-slate-500">Deadline</p>
-              <p className="text-lg font-semibold text-slate-900">
-                {job.deadline_value} {job.deadline_unit}
-              </p>
-            </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-6 text-sm text-slate-700">
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-500">⭐</span>
+                      <span>
+                        <span className="font-semibold">
+                          {job.selected_worker_rating ?? 4.8}
+                        </span>{" "}
+                        ({job.selected_worker_reviews_count ?? 127} reviews)
+                      </span>
+                    </div>
 
-            <div>
-              <p className="mb-1 text-sm text-slate-500">Estimated Duration</p>
-              <p className="text-lg font-semibold text-slate-900">
-                {job.estimated_duration_value} {job.estimated_duration_unit}
-              </p>
+                    <div>
+                      <span className="font-semibold">
+                        {job.selected_worker_completed_jobs_count ?? 156}
+                      </span>{" "}
+                      jobs completed
+                    </div>
+
+                    <div>
+                      Joined {job.selected_worker_joined_text || "January 2023"}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
+
+          <div className="mb-8 grid gap-8 border-b pb-8 sm:grid-cols-2 lg:grid-cols-3">
+            <InfoItem
+              label="Budget"
+              value={`$${job.budget_min}-${job.budget_max}`}
+            />
+            <InfoItem
+              label="Location"
+              value={`${job.city}, ${job.country}`}
+            />
+            <InfoItem label="Category" value={job.category} />
+            <InfoItem label="Posted" value={formatTimeAgo(job.created_at)} />
+            <InfoItem
+              label="Deadline"
+              value={`${job.deadline_value} ${job.deadline_unit}`}
+            />
+            <InfoItem
+              label="Duration"
+              value={`${job.estimated_duration_value} ${job.estimated_duration_unit}`}
+            />
           </div>
 
           <div className="mb-8">
-            <h2 className="mb-3 text-xl font-semibold text-slate-900">
+            <h2 className="mb-4 text-2xl font-semibold text-slate-900">
               Description
             </h2>
-            <p className="text-base leading-7 text-slate-700">
+            <p className="text-base leading-8 text-slate-700">
               {job.description}
             </p>
           </div>
 
           <div className="mb-8">
-            <h2 className="mb-3 text-xl font-semibold text-slate-900">
+            <h2 className="mb-4 text-2xl font-semibold text-slate-900">
               Skills Required
             </h2>
 
@@ -184,16 +240,39 @@ export default function PosterJobDetail() {
 
           {job.notes && (
             <div>
-              <h2 className="mb-3 text-xl font-semibold text-slate-900">
+              <h2 className="mb-4 text-2xl font-semibold text-slate-900">
                 Notes
               </h2>
-              <p className="text-base leading-7 text-slate-700">
+              <p className="text-base leading-8 text-slate-700">
                 {job.notes}
               </p>
             </div>
           )}
         </div>
       </div>
+
+      {job && (
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title="Edit Job"
+        >
+          <CreateJobForm
+            mode="edit"
+            initialValues={job}
+            onSuccess={handleEditSuccess}
+            onCancel={() => setShowEditModal(false)}
+          />
+        </Modal>
+      )}
+
+      {job && (
+        <ApplicantsModal
+          isOpen={showApplicantsModal}
+          onClose={() => setShowApplicantsModal(false)}
+          job={job}
+        />
+      )}
     </div>
   );
 }

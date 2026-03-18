@@ -39,3 +39,7 @@ export async function deleteJob(jobId) {
   const res = await api.delete(`/jobs/${jobId}`);
   return res.data;
 }
+export async function getWorkerAssignedJob(jobId) {
+  const res = await api.get(`/jobs/worker/${jobId}`);
+  return res.data;
+}
