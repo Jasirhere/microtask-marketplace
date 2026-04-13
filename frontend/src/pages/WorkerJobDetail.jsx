@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getPublicJob } from "../api/jobs";
 import { getMyApplications } from "../api/applications";
+import { submitReview } from "../api/reviews";
 import ApplyJobModal from "../components/ApplyJobModal";
-
 
 function formatTimeAgo(dateString) {
   const created = new Date(dateString);
@@ -29,6 +29,11 @@ export default function WorkerJobDetail() {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [myApplications, setMyApplications] = useState([]);
+
+  // Review states
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     loadJob();
@@ -65,6 +70,20 @@ export default function WorkerJobDetail() {
     await loadMyApplications();
   }
 
+  async function handleSubmitReview() {
+    try {
+      await submitReview({
+        job_id: job.id,
+        reviewee_user_id: job.poster_user_id,
+        rating: rating,
+        feedback: comment,
+      });
+      setReviewSubmitted(true);
+    } catch (err) {
+      console.error("Review failed", err);
+    }
+  }
+
   if (loading) return <div className="p-6">Loading job...</div>;
 
   if (error) {
@@ -78,6 +97,8 @@ export default function WorkerJobDetail() {
   }
 
   if (!job) return <div className="p-6">Job not found.</div>;
+
+  const jobCompleted = job.status === "COMPLETED";
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-8">
@@ -229,6 +250,51 @@ export default function WorkerJobDetail() {
               </div>
             )}
           </div>
+
+          {/* Review Section */}
+          {jobCompleted && !reviewSubmitted && (
+            <div className="mt-6 rounded-xl border p-4">
+              <h3 className="mb-3 font-semibold text-slate-900">Leave a Review for the Client</h3>
+
+              <div className="mb-3 flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    className={`text-2xl transition-colors ${
+                      rating >= star ? "text-yellow-500" : "text-gray-300"
+                    }`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Write your feedback..."
+                rows={3}
+                className="mb-3 w-full rounded-lg border p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+
+              <button
+                type="button"
+                onClick={handleSubmitReview}
+                disabled={rating === 0}
+                className="rounded-lg bg-green-500 px-4 py-2 text-white transition-colors hover:bg-green-600 disabled:opacity-50"
+              >
+                Submit Review
+              </button>
+            </div>
+          )}
+
+          {reviewSubmitted && (
+            <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 font-medium text-emerald-700">
+              ✅ Review submitted! Thank you.
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getJobById, deleteJob } from "../api/jobs";
+import { submitReview } from "../api/reviews";
 import JobStatusBadge from "../components/JobStatusBadge";
 import Modal from "../components/Modal";
 import CreateJobForm from "../components/CreateJobForm";
 import ApplicantsModal from "../components/ApplicantsModal";
+import AssignedJobCompletionActions from "../components/AssignedJobCompletionActions";
 
 function formatTimeAgo(dateString) {
   const created = new Date(dateString);
@@ -38,6 +40,11 @@ export default function PosterJobDetail() {
   const [error, setError] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [showApplicantsModal, setShowApplicantsModal] = useState(false);
+
+  // Review states
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     loadJob();
@@ -73,6 +80,20 @@ export default function PosterJobDetail() {
     await loadJob();
   }
 
+  async function handleSubmitReview() {
+    try {
+      await submitReview({
+        job_id: job.id,
+        reviewee_user_id: job.selected_worker_user_id,
+        rating: rating,
+        comment: comment,
+      });
+      setReviewSubmitted(true);
+    } catch (err) {
+      console.error("Review failed", err);
+    }
+  }
+
   if (loading) {
     return <div className="p-6">Loading job details...</div>;
   }
@@ -94,6 +115,8 @@ export default function PosterJobDetail() {
   const showAssignedWorker =
     job.status === "ASSIGNED" && job.selected_worker_name;
 
+  const jobCompleted = job.status === "COMPLETED";
+
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-8">
       <div className="mx-auto max-w-6xl">
@@ -114,6 +137,16 @@ export default function PosterJobDetail() {
             </div>
 
             <div className="flex gap-3">
+              {job.status === "ASSIGNED" && (
+                <AssignedJobCompletionActions
+                  jobId={job.id}
+                  currentSide="poster"
+                  revieweeUserId={job.selected_worker_user_id}
+                  revieweeName={job.selected_worker_name || "Worker"}
+                  openChat={() => navigate("/chat")}
+                />
+              )}
+
               <button
                 onClick={() => setShowEditModal(true)}
                 className="rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50"
@@ -239,13 +272,58 @@ export default function PosterJobDetail() {
           </div>
 
           {job.notes && (
-            <div>
+            <div className="mb-8">
               <h2 className="mb-4 text-2xl font-semibold text-slate-900">
                 Notes
               </h2>
               <p className="text-base leading-8 text-slate-700">
                 {job.notes}
               </p>
+            </div>
+          )}
+
+          {/* Review Section */}
+          {jobCompleted && !reviewSubmitted && (
+            <div className="mt-6 rounded-xl border p-4">
+              <h3 className="mb-3 font-semibold text-slate-900">Leave a Review for the Worker</h3>
+
+              <div className="mb-3 flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    className={`text-2xl transition-colors ${
+                      rating >= star ? "text-yellow-500" : "text-gray-300"
+                    }`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Write your feedback..."
+                rows={3}
+                className="mb-3 w-full rounded-lg border p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+
+              <button
+                type="button"
+                onClick={handleSubmitReview}
+                disabled={rating === 0}
+                className="rounded-lg bg-green-500 px-4 py-2 text-white transition-colors hover:bg-green-600 disabled:opacity-50"
+              >
+                Submit Review
+              </button>
+            </div>
+          )}
+
+          {reviewSubmitted && (
+            <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 font-medium text-emerald-700">
+              ✅ Review submitted! Thank you.
             </div>
           )}
         </div>

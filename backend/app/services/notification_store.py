@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
 from app.schemas.notification import NotificationPublic
 
 _notifications: List[NotificationPublic] = []
@@ -12,6 +12,9 @@ def create_notification(
     target_mode: str,
     title: str,
     message: str,
+    actor_name: Optional[str] = None,
+    actor_photo_data_url: Optional[str] = None,
+    job_title: Optional[str] = None,
 ) -> NotificationPublic:
     notification = NotificationPublic(
         id=str(uuid.uuid4()),
@@ -20,6 +23,9 @@ def create_notification(
         target_mode=target_mode,
         title=title,
         message=message,
+        actor_name=actor_name,
+        actor_photo_data_url=actor_photo_data_url,
+        job_title=job_title,
         is_read=False,
         created_at=datetime.now(timezone.utc),
     )

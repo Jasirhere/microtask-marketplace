@@ -66,3 +66,17 @@ def get_selected_application_for_job(job_id: str):
         if app.job_id == job_id and app.status == "SELECTED":
             return app
     return None
+
+def get_selected_applications_for_worker(worker_user_id: str):
+    return [
+        app for app in _applications
+        if app.worker_user_id == worker_user_id and app.status == "SELECTED"
+    ]
+
+
+def get_selected_applications_for_poster_jobs(poster_user_id: str, jobs: list):
+    job_ids = {job.id for job in jobs}
+    return [
+        app for app in _applications
+        if app.job_id in job_ids and app.status == "SELECTED"
+    ]

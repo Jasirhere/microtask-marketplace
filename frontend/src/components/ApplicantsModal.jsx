@@ -107,7 +107,20 @@ export default function ApplicantsModal({ isOpen, onClose, job }) {
                   <p className="text-lg font-semibold text-slate-900">
                     {applicant.worker_name}
                   </p>
-                  <p className="text-sm text-slate-500">
+                  {(applicant.worker_reviews_count ?? 0) > 0 ? (
+                    <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+                      <span className="text-yellow-500">⭐</span>
+                      <span>
+                        <span className="font-semibold text-slate-900">
+                          {applicant.worker_average_rating ?? 0}
+                        </span>{" "}
+                        ({applicant.worker_reviews_count ?? 0} reviews)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-sm text-slate-500">No reviews yet</div>
+                  )}
+                  <p className="text-sm text-slate-500 mt-2">
                     Applied {formatTimeAgo(applicant.applied_at)}
                   </p>
                 </div>

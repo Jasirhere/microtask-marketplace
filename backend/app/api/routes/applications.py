@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
-
+from app.services.review_store import get_user_review_summary
 from app.api.deps import get_current_user
 from app.schemas.application import JobApplicationCreate, JobApplicationPublic
 from app.schemas.poster_applications import PosterApplicantItem
@@ -13,17 +13,15 @@ from app.services.application_store import (
     get_application_by_id,
     reject_other_applications,
 )
-from app.services.job_store import get_job_by_id , set_job_status
+from app.services.job_store import get_job_by_id, set_job_status
 from app.services.user_store import get_by_id
 from app.services.notification_store import create_notification
-
-
 
 router = APIRouter(prefix="/applications", tags=["applications"])
 
 
 @router.post("", response_model=JobApplicationPublic, status_code=status.HTTP_201_CREATED)
-def apply_to_job(
+async def apply_to_job(
     body: JobApplicationCreate,
     current_user=Depends(get_current_user),
 ):
@@ -69,8 +67,13 @@ def apply_to_job(
 
     worker_name = (
         current_user.worker_profile.name
-        if current_user.worker_profile
+        if current_user.worker_profile and current_user.worker_profile.name
         else current_user.email
+    )
+    worker_photo = (
+        current_user.worker_profile.photo_data_url
+        if current_user.worker_profile
+        else None
     )
 
     create_notification(
@@ -79,7 +82,21 @@ def apply_to_job(
         target_mode="poster",
         title="New Application",
         message=f'{worker_name} applied for "{job.title}"',
+        actor_name=worker_name,
+        actor_photo_data_url=worker_photo,
+        job_title=job.title,
     )
+
+    # Live update for poster bell/chat
+    try:
+        from app.api.routes.chat import user_manager
+
+        await user_manager.send_to_user(
+            job.poster_user_id,
+            {"type": "notification_update"},
+        )
+    except Exception:
+        pass
 
     return application
 
@@ -118,26 +135,20 @@ def get_my_jobs(current_user=Depends(get_current_user)):
                 applied_at=app.created_at,
                 proposed_rate=app.proposed_rate,
                 cover_letter=app.cover_letter,
-
                 job_id=job.id,
                 job_title=job.title,
                 job_description=job.description,
                 job_category=job.category,
-
                 country=job.country,
                 city=job.city,
                 area=job.area,
                 address_details=job.address_details,
-
                 budget_min=job.budget_min,
                 budget_max=job.budget_max,
-
                 deadline_value=job.deadline_value,
                 deadline_unit=job.deadline_unit,
-
                 estimated_duration_value=job.estimated_duration_value,
                 estimated_duration_unit=job.estimated_duration_unit,
-
                 job_status=job.status,
                 created_at=job.created_at,
             )
@@ -171,6 +182,7 @@ def get_applications_for_job_route(job_id: str, current_user=Depends(get_current
 
     for app in get_applications_for_job(job_id):
         worker = get_by_id(app.worker_user_id)
+        review_summary = get_user_review_summary(app.worker_user_id, "worker")
 
         applicants.append(
             PosterApplicantItem(
@@ -179,18 +191,20 @@ def get_applications_for_job_route(job_id: str, current_user=Depends(get_current
                 worker_user_id=app.worker_user_id,
                 worker_name=worker.worker_profile.name if worker and worker.worker_profile else "Worker",
                 worker_photo_data_url=worker.worker_profile.photo_data_url if worker and worker.worker_profile else None,
+                worker_average_rating=review_summary["average_rating"],
+                worker_reviews_count=review_summary["reviews_count"],
                 proposed_rate=app.proposed_rate,
                 cover_letter=app.cover_letter,
                 status=app.status,
                 applied_at=app.created_at,
             )
         )
-
     applicants.sort(key=lambda x: x.applied_at, reverse=True)
     return applicants
 
+
 @router.post("/{application_id}/accept")
-def accept_application(application_id: str, current_user=Depends(get_current_user)):
+async def accept_application(application_id: str, current_user=Depends(get_current_user)):
     if current_user.poster_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -227,17 +241,57 @@ def accept_application(application_id: str, current_user=Depends(get_current_use
     reject_other_applications(job.id, application.id)
     set_job_status(job.id, "ASSIGNED")
 
+    poster_name = (
+        current_user.poster_profile.name
+        if current_user.poster_profile and current_user.poster_profile.name
+        else current_user.email
+    )
+    poster_photo = (
+        current_user.poster_profile.photo_data_url
+        if current_user.poster_profile
+        else None
+    )
+
     create_notification(
         user_id=application.worker_user_id,
         type="APPLICATION_ACCEPTED",
         target_mode="worker",
         title="Application Accepted",
         message=f'You have been selected for "{job.title}"',
+        actor_name=poster_name,
+        actor_photo_data_url=poster_photo,
+        job_title=job.title,
     )
+
+    # Live update for worker + poster
+    try:
+        from app.api.routes.chat import user_manager
+
+        await user_manager.send_to_user(
+            application.worker_user_id,
+            {"type": "notification_update"},
+        )
+        await user_manager.send_to_user(
+            current_user.id,
+            {"type": "notification_update"},
+        )
+
+        await user_manager.send_to_user(
+            application.worker_user_id,
+            {"type": "chat_list_update"},
+        )
+        await user_manager.send_to_user(
+            current_user.id,
+            {"type": "chat_list_update"},
+        )
+    except Exception:
+        pass
+
+    return {"message": "Applicant accepted successfully"}
 
 
 @router.post("/{application_id}/reject")
-def reject_application(application_id: str, current_user=Depends(get_current_user)):
+async def reject_application(application_id: str, current_user=Depends(get_current_user)):
     if current_user.poster_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -272,11 +326,41 @@ def reject_application(application_id: str, current_user=Depends(get_current_use
 
     application.status = "REJECTED"
 
+    poster_name = (
+        current_user.poster_profile.name
+        if current_user.poster_profile and current_user.poster_profile.name
+        else current_user.email
+    )
+    poster_photo = (
+        current_user.poster_profile.photo_data_url
+        if current_user.poster_profile
+        else None
+    )
+
     create_notification(
         user_id=application.worker_user_id,
         type="APPLICATION_REJECTED",
         target_mode="worker",
         title="Application Update",
         message=f'Your application for "{job.title}" was not selected',
+        actor_name=poster_name,
+        actor_photo_data_url=poster_photo,
+        job_title=job.title,
     )
+
+    try:
+        from app.api.routes.chat import user_manager
+
+        await user_manager.send_to_user(
+            application.worker_user_id,
+            {"type": "notification_update"},
+        )
+        await user_manager.send_to_user(
+            current_user.id,
+            {"type": "notification_update"},
+        )
+    except Exception:
+        pass
+
     return {"message": "Applicant rejected successfully"}
+

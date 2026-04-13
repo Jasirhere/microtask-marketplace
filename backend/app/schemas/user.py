@@ -1,5 +1,6 @@
 from typing import Optional, Literal, List
 from pydantic import BaseModel, EmailStr
+from datetime import datetime
 
 ModeType = Literal["poster", "worker"]
 
@@ -10,6 +11,7 @@ class PosterProfile(BaseModel):
     photo_data_url: Optional[str] = None
     bio: Optional[str] = None
     location: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 
 class WorkerProfile(BaseModel):
@@ -19,6 +21,7 @@ class WorkerProfile(BaseModel):
     skills: List[str] = []
     bio: Optional[str] = None
     location: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 
 class UserPublic(BaseModel):

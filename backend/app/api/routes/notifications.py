@@ -1,6 +1,5 @@
 from typing import List, Literal
 from fastapi import APIRouter, Depends, Query
-
 from app.api.deps import get_current_user
 from app.schemas.notification import NotificationPublic
 from app.services.notification_store import (

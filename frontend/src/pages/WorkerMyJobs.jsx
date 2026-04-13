@@ -54,9 +54,13 @@ export default function WorkerMyJobs() {
     () => jobs.filter((item) => item.application_status === "APPLIED"),
     [jobs]
   );
-
   const activeJobs = useMemo(
-    () => jobs.filter((item) => item.application_status === "SELECTED"),
+    () =>
+      jobs.filter(
+        (item) =>
+          item.application_status === "SELECTED" &&
+          item.job_status !== "COMPLETED"
+      ),
     [jobs]
   );
 
@@ -64,12 +68,12 @@ export default function WorkerMyJobs() {
     () =>
       jobs.filter(
         (item) =>
+          item.job_status === "COMPLETED" ||
           item.application_status === "REJECTED" ||
           item.application_status === "WITHDRAWN"
       ),
     [jobs]
   );
-
   const visibleJobs =
     activeTab === "ACTIVE"
       ? activeJobs
@@ -121,8 +125,8 @@ export default function WorkerMyJobs() {
           <button
             onClick={() => setActiveTab("ACTIVE")}
             className={`flex-1 rounded-xl px-4 py-3 font-medium ${activeTab === "ACTIVE"
-                ? "bg-blue-600 text-white"
-                : "text-slate-700 hover:bg-slate-50"
+              ? "bg-blue-600 text-white"
+              : "text-slate-700 hover:bg-slate-50"
               }`}
           >
             Active ({activeJobs.length})
@@ -131,8 +135,8 @@ export default function WorkerMyJobs() {
           <button
             onClick={() => setActiveTab("APPLIED")}
             className={`flex-1 rounded-xl px-4 py-3 font-medium ${activeTab === "APPLIED"
-                ? "bg-blue-600 text-white"
-                : "text-slate-700 hover:bg-slate-50"
+              ? "bg-blue-600 text-white"
+              : "text-slate-700 hover:bg-slate-50"
               }`}
           >
             Applied ({appliedJobs.length})
@@ -141,8 +145,8 @@ export default function WorkerMyJobs() {
           <button
             onClick={() => setActiveTab("COMPLETED")}
             className={`flex-1 rounded-xl px-4 py-3 font-medium ${activeTab === "COMPLETED"
-                ? "bg-blue-600 text-white"
-                : "text-slate-700 hover:bg-slate-50"
+              ? "bg-blue-600 text-white"
+              : "text-slate-700 hover:bg-slate-50"
               }`}
           >
             Completed ({completedJobs.length})
@@ -175,13 +179,13 @@ export default function WorkerMyJobs() {
                   <h3 className="text-2xl font-semibold text-slate-900">
                     {item.job_title}
                   </h3>
-
                   <span
-                    className={`rounded-full px-3 py-1 text-sm font-medium ${STATUS_STYLES[item.application_status] ||
-                      "bg-slate-100 text-slate-700"
+                    className={`rounded-full px-3 py-1 text-sm font-medium ${item.job_status === "COMPLETED"
+                        ? "bg-green-100 text-green-700"
+                        : STATUS_STYLES[item.application_status] || "bg-slate-100 text-slate-700"
                       }`}
                   >
-                    {item.application_status}
+                    {item.job_status === "COMPLETED" ? "COMPLETED" : item.application_status}
                   </span>
                 </div>
 

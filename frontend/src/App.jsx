@@ -13,6 +13,11 @@ import WorkerJobsFeed from "./pages/WorkerJobsFeed";
 import WorkerJobDetail from "./pages/WorkerJobDetail";
 import WorkerMyJobs from "./pages/WorkerMyJobs";
 import WorkerAssignedJobDetail from "./pages/WorkerAssignedJobDetail";
+import ChatPage from "./pages/ChatPage";
+import PosterProfile from "./pages/PosterProfile";
+import WorkerProfile from "./pages/WorkerProfile";
+
+
 
 export default function App() {
   return (
@@ -116,6 +121,30 @@ export default function App() {
         }
       />
 
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/poster/profile"
+        element={
+          <ProtectedRoute>
+            <PosterProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/worker/profile"
+        element={
+          <ProtectedRoute>
+            <WorkerProfile />
+          </ProtectedRoute>
+        }
+      />
 
 
       <Route path="*" element={<div className="p-6">404</div>} />

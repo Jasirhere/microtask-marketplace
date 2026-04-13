@@ -17,3 +17,5 @@ class PosterApplicantItem(BaseModel):
     cover_letter: Optional[str] = None
     status: ApplicationStatus
     applied_at: datetime
+    worker_average_rating: float = 0
+    worker_reviews_count: int = 0

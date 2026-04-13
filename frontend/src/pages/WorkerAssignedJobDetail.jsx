@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getWorkerAssignedJob } from "../api/jobs";
+import AssignedJobCompletionActions from "../components/AssignedJobCompletionActions";
 
 export default function WorkerAssignedJobDetail() {
   const { jobId } = useParams();
@@ -36,13 +37,30 @@ export default function WorkerAssignedJobDetail() {
 
   if (!job) return <div className="p-6">No job found</div>;
 
+  console.log("assigned job data", job);
+
   return (
     <div className="p-6">
-      <button onClick={() => navigate("/worker/my-jobs")}>
-        ← Back
-      </button>
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <button
+          onClick={() => navigate("/worker/my-jobs")}
+          className="text-slate-600 hover:text-slate-900"
+        >
+          ← Back
+        </button>
 
-      <h1 className="text-2xl font-bold mt-4">{job.title}</h1>
+        {job.status === "ASSIGNED" && (
+          <AssignedJobCompletionActions
+            jobId={job.id}
+            currentSide="worker"
+            revieweeUserId={job.poster_user_id}
+            revieweeName={job.poster_name || "Poster"}
+            openChat={() => navigate("/chat")}
+          />
+        )}
+      </div>
+
+      <h1 className="text-2xl font-bold">{job.title}</h1>
 
       <p className="mt-2">Status: {job.status}</p>
       <p className="mt-2">{job.description}</p>
