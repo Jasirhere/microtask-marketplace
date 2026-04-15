@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function AccountMenu({ onAccountSettings, onLogout, photoSrc, fallbackLabel = "U" }) {
+export default function AccountMenu({
+  onMyProfile,
+  onAccountSettings,
+  onLogout,
+  photoSrc,
+  fallbackLabel = "U",
+}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -32,6 +38,17 @@ export default function AccountMenu({ onAccountSettings, onLogout, photoSrc, fal
 
       {open && (
         <div className="absolute right-0 mt-3 w-64 rounded-2xl border bg-white p-2 shadow-xl z-50">
+          <button
+            onClick={() => {
+              setOpen(false);
+              onMyProfile();
+            }}
+            className="w-full px-5 py-3 text-left text-sm text-slate-700 hover:bg-slate-50"
+            type="button"
+          >
+            My Profile
+          </button>
+
           <button
             onClick={() => {
               setOpen(false);

@@ -16,13 +16,13 @@ import WorkerAssignedJobDetail from "./pages/WorkerAssignedJobDetail";
 import ChatPage from "./pages/ChatPage";
 import PosterProfile from "./pages/PosterProfile";
 import WorkerProfile from "./pages/WorkerProfile";
-
+import LandingPage from "./pages/LandingPage";
 
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/mode-select" replace />} />
+      <Route path="/" element={<LandingPage />} />
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -145,7 +145,6 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
 
       <Route path="*" element={<div className="p-6">404</div>} />
     </Routes>

@@ -135,6 +135,15 @@ export default function DashboardHeader() {
     navigate("/login");
   }
 
+  function handleMyProfile() {
+    if (user?.current_mode === "worker") {
+      navigate("/worker/profile");
+      return;
+    }
+
+    navigate("/poster/profile");
+  }
+
   function handleAfterDeactivate() {
     logout();
     navigate("/login");
@@ -307,6 +316,7 @@ export default function DashboardHeader() {
               <AccountMenu
                 photoSrc={activePhoto}
                 fallbackLabel={user?.email?.[0]?.toUpperCase() || "U"}
+                onMyProfile={handleMyProfile}
                 onAccountSettings={() => setShowSettings(true)}
                 onLogout={handleLogout}
               />
