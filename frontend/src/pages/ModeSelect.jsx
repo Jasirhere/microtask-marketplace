@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { switchMode } from "../api/profile";
+import { Briefcase, Users } from "lucide-react";
 
 export default function ModeSelect() {
   const { user, reload } = useAuth();
@@ -14,23 +15,17 @@ export default function ModeSelect() {
     const hasPoster = !!user.poster_profile;
     const hasWorker = !!user.worker_profile;
 
-    // If user has both profiles, let them choose every time
-    if (hasPoster && hasWorker) {
-      return;
-    }
+    if (hasPoster && hasWorker) return;
 
-    // If user has only one profile, go directly there
     if (hasPoster && !hasWorker) {
-      navigate("/poster");
+      navigate("/poster", { replace: true });
       return;
     }
 
     if (hasWorker && !hasPoster) {
-      navigate("/worker/jobs");
+      navigate("/worker/jobs", { replace: true });
       return;
     }
-
-    // If user has no profiles, stay here and let them choose
   }, [user, navigate]);
 
   async function handlePoster() {
@@ -72,50 +67,121 @@ export default function ModeSelect() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-4xl">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-slate-800">
-            Choose how you want to continue
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 px-4 py-12">
+      <div className="w-full max-w-6xl">
+        <div className="mb-12 text-center">
+          <h1 className="mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
+            How would you like to start?
           </h1>
-          <p className="text-slate-600 mt-2">
-            Select your mode to continue using the platform.
+
+          <p className="mx-auto max-w-2xl text-lg text-gray-600">
+            Choose your role to continue. You can switch between modes anytime from your dashboard.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-2">
           <button
-            onClick={handlePoster}
-            disabled={loadingMode === "poster"}
-            className="text-left bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition"
+            onClick={handleWorker}
+            disabled={loadingMode === "worker"}
+            type="button"
+            className="group text-left transition hover:-translate-y-1 hover:scale-[1.02] disabled:opacity-60"
           >
-            <h2 className="text-xl font-semibold mb-2">Continue as Job Poster</h2>
-            <p className="text-slate-600 mb-4">
-              Post tasks, manage applicants, and hire workers.
-            </p>
-            <div className="text-sm text-slate-500">
-              {user?.poster_profile
-                ? "Poster profile found"
-                : "Poster profile not found — setup required"}
+            <div className="relative h-full overflow-hidden rounded-2xl border-2 border-transparent bg-white shadow-xl transition-all duration-300 group-hover:border-indigo-500">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 opacity-0 transition-opacity duration-300 group-hover:opacity-5" />
+
+              <div className="relative flex h-full flex-col items-center p-8 text-center">
+                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 transition-transform duration-500 group-hover:rotate-12">
+                  <Users className="h-10 w-10 text-white" />
+                </div>
+
+                <h2 className="mb-4 text-3xl font-bold text-gray-900">
+                  Work as a Worker
+                </h2>
+
+                <p className="mb-8 flex-grow text-gray-600">
+                  Find job opportunities, showcase your skills, apply to relevant tasks, and build your reputation through reviews.
+                </p>
+
+                <div className="mb-8 w-full space-y-3">
+                  {[
+                    "Browse and apply for jobs",
+                    "Build your profile",
+                    "Chat after selection",
+                    "Earn reviews and ratings",
+                  ].map((item) => (
+                    <div key={item} className="flex items-center text-left">
+                      <div className="mr-3 h-2 w-2 rounded-full bg-indigo-500" />
+                      <span className="text-gray-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mb-4 text-sm text-gray-500">
+                  {user?.worker_profile
+                    ? "Worker profile found"
+                    : "Worker profile not found — setup required"}
+                </div>
+
+                <div className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-4 text-center font-semibold text-white shadow-lg transition hover:shadow-xl">
+                  {loadingMode === "worker" ? "Loading..." : "Continue as Worker"}
+                </div>
+              </div>
             </div>
           </button>
 
           <button
-            onClick={handleWorker}
-            disabled={loadingMode === "worker"}
-            className="text-left bg-white border rounded-2xl p-6 shadow-sm hover:shadow-md transition"
+            onClick={handlePoster}
+            disabled={loadingMode === "poster"}
+            type="button"
+            className="group text-left transition hover:-translate-y-1 hover:scale-[1.02] disabled:opacity-60"
           >
-            <h2 className="text-xl font-semibold mb-2">Continue as Job Worker</h2>
-            <p className="text-slate-600 mb-4">
-              Discover jobs, apply for tasks, and build your reputation.
-            </p>
-            <div className="text-sm text-slate-500">
-              {user?.worker_profile
-                ? "Worker profile found"
-                : "Worker profile not found — setup required"}
+            <div className="relative h-full overflow-hidden rounded-2xl border-2 border-transparent bg-white shadow-xl transition-all duration-300 group-hover:border-purple-500">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-600 opacity-0 transition-opacity duration-300 group-hover:opacity-5" />
+
+              <div className="relative flex h-full flex-col items-center p-8 text-center">
+                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-600 transition-transform duration-500 group-hover:rotate-12">
+                  <Briefcase className="h-10 w-10 text-white" />
+                </div>
+
+                <h2 className="mb-4 text-3xl font-bold text-gray-900">
+                  Work as a Poster
+                </h2>
+
+                <p className="mb-8 flex-grow text-gray-600">
+                  Post jobs, review applicants, select workers, manage work, and leave reviews after completion.
+                </p>
+
+                <div className="mb-8 w-full space-y-3">
+                  {[
+                    "Post jobs",
+                    "Review applications",
+                    "Select workers",
+                    "Rate and review workers",
+                  ].map((item) => (
+                    <div key={item} className="flex items-center text-left">
+                      <div className="mr-3 h-2 w-2 rounded-full bg-purple-500" />
+                      <span className="text-gray-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mb-4 text-sm text-gray-500">
+                  {user?.poster_profile
+                    ? "Poster profile found"
+                    : "Poster profile not found — setup required"}
+                </div>
+
+                <div className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-4 text-center font-semibold text-white shadow-lg transition hover:shadow-xl">
+                  {loadingMode === "poster" ? "Loading..." : "Continue as Poster"}
+                </div>
+              </div>
             </div>
           </button>
         </div>
+
+        <p className="mt-8 text-center text-gray-500">
+          Not sure? You can always switch modes later from your dashboard.
+        </p>
       </div>
     </div>
   );

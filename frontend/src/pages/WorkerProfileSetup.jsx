@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createWorkerProfile } from "../api/profile";
 import { useAuth } from "../auth/AuthContext";
+import { User, Phone, MapPin, Briefcase, FileText } from "lucide-react";
 
 export default function WorkerProfileSetup() {
   const navigate = useNavigate();
@@ -10,10 +11,10 @@ export default function WorkerProfileSetup() {
   const [form, setForm] = useState({
     name: "",
     phone: "",
-    photo_data_url: "",
     location: "",
     bio: "",
     skills: "",
+    photo_data_url: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -21,10 +22,7 @@ export default function WorkerProfileSetup() {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   function handleFileChange(e) {
@@ -47,107 +45,138 @@ export default function WorkerProfileSetup() {
     setLoading(true);
 
     try {
-      const payload = {
+      await createWorkerProfile({
         name: form.name,
         phone: form.phone,
-        photo_data_url: form.photo_data_url,
         location: form.location,
         bio: form.bio,
+        photo_data_url: form.photo_data_url,
         skills: form.skills
           .split(",")
-          .map((item) => item.trim())
+          .map((s) => s.trim())
           .filter(Boolean),
-      };
+      });
 
-      await createWorkerProfile(payload);
       await reload();
-      navigate("/worker/jobs", { replace: true });
+      navigate("/worker/jobs");
     } catch (err) {
-      setError(err?.response?.data?.detail || "Failed to create worker profile");
+      setError(err?.response?.data?.detail || "Something went wrong");
     } finally {
       setLoading(false);
     }
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-lg bg-white border rounded-2xl p-6 space-y-4 shadow-sm"
-      >
-        <h1 className="text-2xl font-bold">Create Worker Profile</h1>
+ return (
+  <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-12 px-4">
+    <div className="max-w-3xl mx-auto">
 
-        {error && <div className="text-red-600 text-sm">{error}</div>}
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">Profile Photo</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full rounded-lg border p-2"
-          />
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span className="text-white text-xl">👤</span>
         </div>
+        <h1 className="text-3xl font-semibold">Complete Your Worker Profile</h1>
+        <p className="text-gray-600">Let employers know about your skills</p>
+      </div>
 
-        {form.photo_data_url && (
-          <img
-            src={form.photo_data_url}
-            alt="Preview"
-            className="h-20 w-20 rounded-full object-cover border"
-          />
-        )}
+      {/* Card */}
+      <div className="bg-white rounded-2xl shadow-xl p-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
 
-        <input
-          name="name"
-          placeholder="Full name"
-          value={form.name}
-          onChange={handleChange}
-          className="w-full border rounded-lg p-3"
-          required
-        />
+          {/* Personal Info */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4 border-b pb-2">Personal Information</h2>
 
-        <input
-          name="phone"
-          placeholder="Phone number"
-          value={form.phone}
-          onChange={handleChange}
-          className="w-full border rounded-lg p-3"
-          required
-        />
+            {/* Photo Upload */}
+            <div className="mb-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full border p-2 rounded-lg"
+              />
+              {form.photo_data_url && (
+                <img
+                  src={form.photo_data_url}
+                  className="h-20 w-20 rounded-full mt-2 object-cover border"
+                />
+              )}
+            </div>
 
-        <input
-          name="location"
-          placeholder="Location"
-          value={form.location}
-          onChange={handleChange}
-          className="w-full border rounded-lg p-3"
-          required
-        />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <input
-          name="skills"
-          placeholder="Skills (comma separated)"
-          value={form.skills}
-          onChange={handleChange}
-          className="w-full border rounded-lg p-3"
-        />
+              <input
+                name="name"
+                placeholder="Full Name *"
+                value={form.name}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-xl"
+                required
+              />
 
-        <textarea
-          name="bio"
-          placeholder="Short bio"
-          value={form.bio}
-          onChange={handleChange}
-          className="w-full border rounded-lg p-3"
-          rows={4}
-        />
+              <input
+                name="phone"
+                placeholder="Phone Number"
+                value={form.phone}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-xl"
+              />
 
-        <button
-          disabled={loading}
-          className="w-full rounded-lg p-3 border bg-slate-900 text-white disabled:opacity-60"
-        >
-          {loading ? "Saving..." : "Save Worker Profile"}
-        </button>
-      </form>
+              <input
+                name="location"
+                placeholder="Location *"
+                value={form.location}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-xl md:col-span-2"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Professional Info */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4 border-b pb-2">Professional Information</h2>
+
+            <input
+              name="skills"
+              placeholder="Skills (comma separated)"
+              value={form.skills}
+              onChange={handleChange}
+              className="w-full p-3 border rounded-xl mb-4"
+            />
+
+            <textarea
+              name="bio"
+              placeholder="Short Bio"
+              value={form.bio}
+              onChange={handleChange}
+              className="w-full p-3 border rounded-xl"
+              rows={4}
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-4 pt-4">
+            <button
+              type="button"
+              onClick={() => navigate("/select-mode")}
+              className="flex-1 py-3 border rounded-xl"
+            >
+              Go Back
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl"
+            >
+              {loading ? "Saving..." : "Create Worker Profile"}
+            </button>
+          </div>
+
+        </form>
+      </div>
     </div>
-  );
+  </div>
+);
 }
