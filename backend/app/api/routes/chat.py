@@ -267,10 +267,6 @@ async def chat_websocket(websocket: WebSocket, job_id: str, user_id: str):
 
             await manager.broadcast(job_id, payload)
 
-            # Notify both users to refresh their chat sidebar (unread counts, last message, etc.)
-            await user_manager.send_to_user(sender_user_id, {"type": "chat_list_update"})
-            await user_manager.send_to_user(receiver_user_id, {"type": "chat_list_update"})
-
     except WebSocketDisconnect:
         manager.disconnect(job_id, user_id, websocket)
 

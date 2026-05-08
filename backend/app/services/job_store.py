@@ -17,6 +17,7 @@ def create_job(job_data: JobCreate, poster_user_id: str) -> JobPublic:
         category=job_data.category,
 
         country=job_data.country,
+        state=job_data.state,
         city=job_data.city,
         area=job_data.area,
         address_details=job_data.address_details,
@@ -37,6 +38,11 @@ def create_job(job_data: JobCreate, poster_user_id: str) -> JobPublic:
         notes=job_data.notes,
 
         status="OPEN",
+
+        payment_status="UNPAID",
+        paid_at=None,
+        stripe_payment_intent_id=None,
+
         created_at=datetime.now(timezone.utc),
     )
 

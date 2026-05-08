@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getUserReviews, getUserStats } from "../api/reviews";
+import { getMyJobs } from "../api/jobs";
 import DashboardHeader from "../components/DashboardHeader";
 import { useAuth } from "../auth/AuthContext";
 import { createPosterProfile } from "../api/profile";
@@ -36,6 +37,7 @@ export default function PosterProfile() {
     const [reviewFilter, setReviewFilter] = useState("all");
     const [reviews, setReviews] = useState([]);
     const [stats, setStats] = useState(null);
+    const [posterJobs, setPosterJobs] = useState([]);
     const [editForm, setEditForm] = useState({
         name: profile?.name || "",
         bio: profile?.bio || "",
@@ -114,6 +116,19 @@ export default function PosterProfile() {
 
         loadStats();
     }, [user]);
+
+    useEffect(() => {
+        async function loadPosterJobs() {
+            try {
+                const data = await getMyJobs();
+                setPosterJobs(data);
+            } catch (error) {
+                console.error("Failed to load poster jobs", error);
+            }
+        }
+
+        loadPosterJobs();
+    }, []);
     function startEditing() {
         setEditForm({
             name: profile?.name || "",
@@ -178,6 +193,14 @@ export default function PosterProfile() {
     function handleAvatarUpload() {
         document.getElementById("poster-avatar-upload")?.click();
     }
+
+    const totalSpent = posterJobs
+        .filter((job) => job.payment_status === "PAID")
+        .reduce((sum, job) => sum + Number(job.budget_max || job.budget_min || 0), 0);
+
+    const workersHired = posterJobs.filter(
+        (job) => job.status === "COMPLETED" || job.status === "ASSIGNED"
+    ).length;
 
     return (
         <div className="min-h-screen bg-slate-50 pb-12">
@@ -432,7 +455,7 @@ export default function PosterProfile() {
                                             <DollarSign className="h-5 w-5 text-emerald-500" />
                                             <p className="text-sm text-slate-500">Spent</p>
                                         </div>
-                                        <p className="text-2xl font-bold">$10,350</p>
+                                        <p className="text-2xl font-bold">${totalSpent.toLocaleString()}</p>
                                     </div>
 
                                     <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-violet-50/40 p-4">
@@ -448,7 +471,7 @@ export default function PosterProfile() {
                                             <ThumbsUp className="h-5 w-5 text-amber-500" />
                                             <p className="text-sm text-slate-500">Hired</p>
                                         </div>
-                                        <p className="text-2xl font-bold">5</p>
+                                        <p className="text-2xl font-bold">{workersHired}</p>
                                     </div>
 
                                     <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-50/40 p-4">
@@ -636,7 +659,7 @@ export default function PosterProfile() {
                                 <div className="grid gap-4 md:grid-cols-3">
                                     <div className="rounded-2xl border p-5">
                                         <div className="text-sm text-slate-500">Total Spent</div>
-                                        <div className="mt-2 text-2xl font-bold text-emerald-600">$10,350</div>
+                                        <div className="mt-2 text-2xl font-bold text-emerald-600">${totalSpent.toLocaleString()}</div>
                                     </div>
 
                                     <div className="rounded-2xl border p-5">
@@ -645,7 +668,7 @@ export default function PosterProfile() {
 
                                     <div className="rounded-2xl border p-5">
                                         <div className="text-sm text-slate-500">Workers Hired</div>
-                                        <div className="mt-2 text-2xl font-bold text-amber-600">5</div>
+                                        <div className="mt-2 text-2xl font-bold text-amber-600">{workersHired}</div>
                                     </div>
                                 </div>
 

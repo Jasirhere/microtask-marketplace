@@ -146,25 +146,34 @@ export default function ApplicantsModal({ isOpen, onClose, job }) {
                 </div>
               )}
 
-              {applicant.status === "APPLIED" && (
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleReject(applicant.application_id)}
-                    disabled={actionLoadingId === applicant.application_id}
-                    className="rounded-xl border px-4 py-2 text-red-600 hover:bg-red-50 disabled:opacity-60"
-                  >
-                    Reject
-                  </button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  onClick={() => window.open(`/workers/${applicant.worker_user_id}`, '_blank')}
+                  className="rounded-xl border border-violet-200 px-4 py-2 text-sm text-violet-600 hover:bg-violet-50"
+                >
+                  View Worker Profile
+                </button>
 
-                  <button
-                    onClick={() => handleAccept(applicant.application_id)}
-                    disabled={actionLoadingId === applicant.application_id}
-                    className="rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-60"
-                  >
-                    Accept
-                  </button>
-                </div>
-              )}
+                {applicant.status === "APPLIED" && (
+                  <>
+                    <button
+                      onClick={() => handleReject(applicant.application_id)}
+                      disabled={actionLoadingId === applicant.application_id}
+                      className="rounded-xl border px-4 py-2 text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      Reject
+                    </button>
+
+                    <button
+                      onClick={() => handleAccept(applicant.application_id)}
+                      disabled={actionLoadingId === applicant.application_id}
+                      className="rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-60"
+                    >
+                      Accept
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>

@@ -17,6 +17,7 @@ import ChatPage from "./pages/ChatPage";
 import PosterProfile from "./pages/PosterProfile";
 import WorkerProfile from "./pages/WorkerProfile";
 import LandingPage from "./pages/LandingPage";
+import PosterReleasePayment from "./pages/PosterReleasePayment";
 
 
 export default function App() {
@@ -89,6 +90,14 @@ export default function App() {
         }
       />
       <Route
+        path="/poster/jobs/:jobId/payment"
+        element={
+          <ProtectedRoute>
+            <PosterReleasePayment />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/worker/jobs"
         element={
           <ProtectedRoute>
@@ -139,6 +148,14 @@ export default function App() {
       />
       <Route
         path="/worker/profile"
+        element={
+          <ProtectedRoute>
+            <WorkerProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workers/:userId"
         element={
           <ProtectedRoute>
             <WorkerProfile />

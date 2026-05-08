@@ -1,8 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { getMyChats } from "../api/chat";
 import { useAuth } from "../auth/AuthContext";
 
-const ChatContext = createContext(null);
+export const ChatContext = createContext(null);
 
 export function ChatProvider({ children }) {
   const { user } = useAuth();
@@ -51,13 +51,9 @@ export function ChatProvider({ children }) {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-
-      if (data.type === "chat_list_update") {
-        loadChats();
-      }
-
       if (data.type === "notification_update") {
         window.dispatchEvent(new Event("notification-update"));
+        loadChats();
       }
     };
 
@@ -90,12 +86,4 @@ export function ChatProvider({ children }) {
       {children}
     </ChatContext.Provider>
   );
-}
-
-export function useChatContext() {
-  const context = useContext(ChatContext);
-  if (!context) {
-    throw new Error("useChatContext must be used inside ChatProvider");
-  }
-  return context;
 }

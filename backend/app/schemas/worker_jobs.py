@@ -31,5 +31,12 @@ class WorkerJobItem(BaseModel):
     estimated_duration_value: int
     estimated_duration_unit: str
 
+    payment_status: str = "UNPAID"
+    paid_at: Optional[datetime] = None
     job_status: str
     created_at: datetime
+    final_price: Optional[float] = None
+    proposed_rate: Optional[float] = None
+    poster_user_id: str
+    poster_name: str | None = None
+    poster_photo_data_url: str | None = None

@@ -3,7 +3,7 @@ import DashboardHeader from "../components/DashboardHeader";
 import ChatSidebar from "../components/ChatSidebar";
 import ChatWindow from "../components/ChatWindow";
 import ChatEmptyState from "../components/ChatEmptyState";
-import { useChatContext } from "../context/ChatContext";
+import { useChatContext } from "../context/useChatContext";
 
 export default function ChatPage() {
   const { chats, loadChats, loadingChats } = useChatContext();
@@ -11,16 +11,16 @@ export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState(null);
 
   useEffect(() => {
-    if (!selectedChat || chats.length === 0) return;
+    if (!selectedChat) return;
 
-    const latestSelectedChat = chats.find(
+    const latest = chats.find(
       (chat) => chat.job_id === selectedChat.job_id
     );
 
-    if (latestSelectedChat) {
-      setSelectedChat(latestSelectedChat);
+    if (latest && latest !== selectedChat) {
+      setSelectedChat(latest);
     }
-  }, [chats, selectedChat]);
+  }, [chats]);
 
   return (
     <div className="min-h-screen bg-slate-50">

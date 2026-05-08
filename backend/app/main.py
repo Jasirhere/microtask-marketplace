@@ -10,6 +10,7 @@ from app.api.routes.notifications import router as notifications_router
 from app.api.routes.chat import router as chat_router
 from app.api.routes.completion import router as completion_router
 from app.api.routes.reviews import router as reviews_router
+from app.api.routes import payments
 
 app = FastAPI()
 
@@ -26,11 +27,11 @@ app.include_router(users_router)
 app.include_router(profile_router)
 app.include_router(jobs_router)
 app.include_router(applications_router)
-app.include_router(notifications_router)
 app.include_router(chat_router)
 app.include_router(completion_router)
 app.include_router(reviews_router)
 app.include_router(notifications_router)
+app.include_router(payments.router)
 
 
 @app.get("/")

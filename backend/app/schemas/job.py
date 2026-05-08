@@ -5,6 +5,7 @@ from pydantic import BaseModel
 DeadlineUnit = Literal["hours", "days", "weeks"]
 DurationUnit = Literal["hours", "days"]
 JobStatus = Literal["OPEN", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CLOSED"]
+PaymentStatus = Literal["UNPAID", "PAID"]
 
 CATEGORY_OPTIONS = [
     "Cleaning",
@@ -25,6 +26,7 @@ class JobCreate(BaseModel):
     category: str
 
     country: str
+    state: str
     city: str
     area: str
     address_details: Optional[str] = None
@@ -54,6 +56,7 @@ class JobPublic(BaseModel):
     category: str
 
     country: str
+    state: str
     city: str
     area: str
     address_details: Optional[str] = None
@@ -86,4 +89,10 @@ class JobPublic(BaseModel):
     selected_worker_reviews_count: Optional[int] = None
 
     status: JobStatus
+
+    payment_status: PaymentStatus = "UNPAID"
+    paid_at: Optional[datetime] = None
+    stripe_payment_intent_id: Optional[str] = None
+
     created_at: datetime
+    final_price: Optional[float] = None

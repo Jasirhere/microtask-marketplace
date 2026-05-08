@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { getUserReviews, getUserStats } from "../api/reviews";
 import DashboardHeader from "../components/DashboardHeader";
 import { useAuth } from "../auth/AuthContext";
-import { createWorkerProfile } from "../api/profile";
+import { createWorkerProfile, getWorkerProfile } from "../api/profile";
 import {
     Star,
     MapPin,
@@ -28,8 +29,16 @@ import {
 
 export default function WorkerProfile() {
     const { user, reload } = useAuth();
+    const { userId } = useParams();
 
-    const profile = user?.worker_profile;
+    const isViewingOtherUser = !!userId && userId !== user?.id;
+    const [viewedUser, setViewedUser] = useState(null);
+    const [loadingViewedUser, setLoadingViewedUser] = useState(false);
+
+    const currentProfile = isViewingOtherUser ? viewedUser?.worker_profile : user?.worker_profile;
+    const currentUserId = isViewingOtherUser ? viewedUser?.id : user?.id;
+    
+    const profile = currentProfile;
 
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -40,10 +49,28 @@ export default function WorkerProfile() {
     const [stats, setStats] = useState(null);
 
     useEffect(() => {
+        async function loadViewedUser() {
+            if (!isViewingOtherUser) return;
+            try {
+                setLoadingViewedUser(true);
+                const data = await getWorkerProfile(userId);
+                setViewedUser(data);
+            } catch (error) {
+                console.error("Failed to load worker profile", error);
+            } finally {
+                setLoadingViewedUser(false);
+            }
+        }
+
+        loadViewedUser();
+    }, [userId, isViewingOtherUser]);
+
+    useEffect(() => {
         async function loadStats() {
             try {
-                if (!user?.id) return;
-                const data = await getUserStats(user.id, "worker");
+                const idToLoad = isViewingOtherUser ? userId : user?.id;
+                if (!idToLoad) return;
+                const data = await getUserStats(idToLoad, "worker");
                 setStats(data);
             } catch (error) {
                 console.error("Failed to load stats", error);
@@ -52,13 +79,14 @@ export default function WorkerProfile() {
         }
 
         loadStats();
-    }, [user]);
+    }, [user, isViewingOtherUser, userId]);
 
     useEffect(() => {
         async function loadReviews() {
             try {
-                if (!user?.id) return;
-                const data = await getUserReviews(user.id, "worker");
+                const idToLoad = isViewingOtherUser ? userId : user?.id;
+                if (!idToLoad) return;
+                const data = await getUserReviews(idToLoad, "worker");
                 setReviews(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error("Failed to load reviews", error);
@@ -67,7 +95,7 @@ export default function WorkerProfile() {
         }
 
         loadReviews();
-    }, [user]);
+    }, [user, isViewingOtherUser, userId]);
 
     const [editForm, setEditForm] = useState({
         name: profile?.name || "",
@@ -209,6 +237,11 @@ export default function WorkerProfile() {
         <div className="min-h-screen bg-slate-50 pb-12">
             <DashboardHeader />
 
+            {isViewingOtherUser && loadingViewedUser ? (
+                <div className="mx-auto max-w-7xl px-4 py-8 flex items-center justify-center min-h-[400px]">
+                    <div className="text-slate-500">Loading worker profile...</div>
+                </div>
+            ) : (
             <div className="mx-auto max-w-7xl px-4 py-8">
                 {/* Cover Photo */}
                 <div className="relative mb-6 h-48 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 md:h-64">
@@ -372,6 +405,7 @@ export default function WorkerProfile() {
                                         <button
                                             onClick={startEditing}
                                             className="flex items-center gap-2 whitespace-nowrap rounded-xl border px-4 py-2 transition-colors hover:bg-slate-50"
+                                            style={{ display: isViewingOtherUser ? 'none' : 'flex' }}
                                         >
                                             <Edit2 className="h-4 w-4" />
                                             <span className="hidden md:inline">Edit Profile</span>
@@ -741,6 +775,7 @@ export default function WorkerProfile() {
                     </div>
                 </div>
             </div>
+            )}
         </div>
     );
 }

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from app.api.deps import get_current_user
 from app.schemas.profile import PosterProfileCreate, WorkerProfileCreate
 from app.schemas.user import UserPublic, PosterProfile, WorkerProfile
-from app.services.user_store import save_user
+from app.services.user_store import save_user, get_by_id
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -18,6 +18,26 @@ class SwitchModeRequest(BaseModel):
 @router.get("/me", response_model=UserPublic)
 def get_my_profiles(current_user=Depends(get_current_user)):
     return current_user
+
+
+@router.get("/worker/{user_id}", response_model=UserPublic)
+def get_worker_profile(user_id: str):
+    user = get_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.worker_profile:
+        raise HTTPException(status_code=404, detail="Worker profile not found")
+    return user
+
+
+@router.get("/poster/{user_id}", response_model=UserPublic)
+def get_poster_profile(user_id: str):
+    user = get_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.poster_profile:
+        raise HTTPException(status_code=404, detail="Poster profile not found")
+    return user
 
 
 @router.post("/poster", response_model=UserPublic)

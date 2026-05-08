@@ -128,6 +128,9 @@ def get_my_jobs(current_user=Depends(get_current_user)):
         if not job:
             continue
 
+        poster = get_by_id(job.poster_user_id)
+        poster_profile = poster.poster_profile if poster else None
+
         items.append(
             WorkerJobItem(
                 application_id=app.id,
@@ -150,7 +153,13 @@ def get_my_jobs(current_user=Depends(get_current_user)):
                 estimated_duration_value=job.estimated_duration_value,
                 estimated_duration_unit=job.estimated_duration_unit,
                 job_status=job.status,
+                payment_status=getattr(job, "payment_status", "UNPAID"),
+                paid_at=getattr(job, "paid_at", None),
+                final_price=getattr(job, "final_price", None),
                 created_at=job.created_at,
+                poster_user_id=job.poster_user_id,
+                poster_name=poster_profile.name if poster_profile else "Client",
+                poster_photo_data_url=poster_profile.photo_data_url if poster_profile else None,
             )
         )
 
@@ -171,7 +180,8 @@ def get_applications_for_job_route(job_id: str, current_user=Depends(get_current
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found",
         )
-
+    poster = get_by_id(job.poster_user_id)
+    poster_profile = poster.poster_profile if poster else None
     if job.poster_user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -238,6 +248,8 @@ async def accept_application(application_id: str, current_user=Depends(get_curre
         )
 
     application.status = "SELECTED"
+    job.selected_worker_user_id = application.worker_user_id
+    job.final_price = application.proposed_rate
     reject_other_applications(job.id, application.id)
     set_job_status(job.id, "ASSIGNED")
 

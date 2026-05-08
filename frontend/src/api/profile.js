@@ -5,6 +5,16 @@ export async function getMyProfiles() {
   return res.data;
 }
 
+export async function getWorkerProfile(userId) {
+  const res = await api.get(`/profiles/worker/${userId}`);
+  return res.data;
+}
+
+export async function getPosterProfile(userId) {
+  const res = await api.get(`/profiles/poster/${userId}`);
+  return res.data;
+}
+
 export async function createPosterProfile(payload) {
   const res = await api.post("/profiles/poster", payload);
   return res.data;

@@ -16,6 +16,7 @@ from app.services.application_store import (
     get_selected_application_for_worker_and_job,
 )
 from app.services.user_store import get_by_id
+from app.schemas import job
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -256,6 +257,7 @@ def update_job(
     job.description = body.description
     job.category = body.category
     job.country = body.country
+    job.state = body.state
     job.city = body.city
     job.area = body.area
     job.address_details = body.address_details

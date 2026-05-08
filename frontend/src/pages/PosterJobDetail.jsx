@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+
 import { getJobById, deleteJob } from "../api/jobs";
 import { submitReview } from "../api/reviews";
+
 import JobStatusBadge from "../components/JobStatusBadge";
 import Modal from "../components/Modal";
 import CreateJobForm from "../components/CreateJobForm";
 import ApplicantsModal from "../components/ApplicantsModal";
-import AssignedJobCompletionActions from "../components/AssignedJobCompletionActions";
 
 function formatTimeAgo(dateString) {
+  if (!dateString) return "Not set";
+
   const created = new Date(dateString);
   const now = new Date();
   const diffMs = now - created;
@@ -17,17 +20,47 @@ function formatTimeAgo(dateString) {
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (minutes < 60) return `${minutes} minutes ago`;
-  if (hours < 24) return `${hours} hours ago`;
-  return `${days} days ago`;
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
-function InfoItem({ label, value }) {
-  return (
-    <div>
-      <p className="mb-1 text-sm text-slate-500">{label}</p>
-      <p className="text-lg font-semibold text-slate-900">{value}</p>
-    </div>
+function formatLocation(job) {
+  return [job.area, job.city, job.state, job.country].filter(Boolean).join(", ");
+}
+
+function budgetLabel(job) {
+  if (job.budget_min && job.budget_max) {
+    return `$${job.budget_min}-${job.budget_max}`;
+  }
+
+  if (job.budget_max) return `$${job.budget_max}`;
+  if (job.budget_min) return `$${job.budget_min}`;
+
+  return "Not set";
+}
+
+function deadlineLabel(job) {
+  if (!job.deadline_value || !job.deadline_unit) return "Not set";
+  return `${job.deadline_value} ${job.deadline_unit}`;
+}
+
+function durationLabel(job) {
+  if (!job.estimated_duration_value || !job.estimated_duration_unit) {
+    return "Not set";
+  }
+
+  return `${job.estimated_duration_value} ${job.estimated_duration_unit}`;
+}
+
+function hasAssignedWorker(job) {
+  return Boolean(
+    job.selected_worker_user_id ||
+      job.selected_worker_name ||
+      job.status === "ASSIGNED" ||
+      job.status === "IN_PROGRESS" ||
+      job.status === "COMPLETED"
   );
 }
 
@@ -38,10 +71,10 @@ export default function PosterJobDetail() {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [showApplicantsModal, setShowApplicantsModal] = useState(false);
 
-  // Review states
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
@@ -54,6 +87,7 @@ export default function PosterJobDetail() {
     try {
       setLoading(true);
       setError("");
+
       const data = await getJobById(jobId);
       setJob(data);
     } catch (err) {
@@ -64,7 +98,7 @@ export default function PosterJobDetail() {
   }
 
   async function handleDeleteJob() {
-    const confirmed = window.confirm("Do you want to delete this gig posted?");
+    const confirmed = window.confirm("Do you want to close/delete this job?");
     if (!confirmed) return;
 
     try {
@@ -81,27 +115,40 @@ export default function PosterJobDetail() {
   }
 
   async function handleSubmitReview() {
+    if (!job?.selected_worker_user_id) {
+      alert("No selected worker found for this job.");
+      return;
+    }
+
     try {
       await submitReview({
         job_id: job.id,
         reviewee_user_id: job.selected_worker_user_id,
-        rating: rating,
-        comment: comment,
+        rating,
+        comment,
       });
+
       setReviewSubmitted(true);
     } catch (err) {
       console.error("Review failed", err);
+      alert(err?.response?.data?.detail || "Failed to submit review");
     }
   }
 
   if (loading) {
-    return <div className="p-6">Loading job details...</div>;
+    return (
+      <div className="min-h-screen bg-slate-50 p-6">
+        <div className="mx-auto max-w-5xl rounded-2xl bg-white p-6 shadow-sm">
+          Loading job details...
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+      <div className="min-h-screen bg-slate-50 p-6">
+        <div className="mx-auto max-w-5xl rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
           {error}
         </div>
       </div>
@@ -109,17 +156,21 @@ export default function PosterJobDetail() {
   }
 
   if (!job) {
-    return <div className="p-6">Job not found.</div>;
+    return (
+      <div className="min-h-screen bg-slate-50 p-6">
+        <div className="mx-auto max-w-5xl rounded-2xl bg-white p-6 shadow-sm">
+          Job not found.
+        </div>
+      </div>
+    );
   }
 
-  const showAssignedWorker =
-    job.status === "ASSIGNED" && job.selected_worker_name;
-
+  const workerAssigned = hasAssignedWorker(job);
   const jobCompleted = job.status === "COMPLETED";
 
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-4xl">
         <Link
           to="/poster"
           className="mb-6 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"
@@ -127,167 +178,187 @@ export default function PosterJobDetail() {
           ← Back to Dashboard
         </Link>
 
-        <div className="rounded-3xl border bg-white p-8 shadow-sm">
-          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h1 className="mb-3 text-3xl font-bold leading-tight text-slate-900">
+        <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <h1 className="break-words text-3xl font-bold leading-tight text-slate-950">
                 {job.title}
               </h1>
-              <JobStatusBadge status={job.status} />
+
+              <div className="mt-3">
+                <JobStatusBadge status={job.status} />
+              </div>
             </div>
 
-            <div className="flex gap-3">
-              {job.status === "ASSIGNED" && (
-                <AssignedJobCompletionActions
-                  jobId={job.id}
-                  currentSide="poster"
-                  revieweeUserId={job.selected_worker_user_id}
-                  revieweeName={job.selected_worker_name || "Worker"}
-                  openChat={() => navigate("/chat")}
-                />
-              )}
-
+            <div className="flex shrink-0 gap-3">
               <button
                 onClick={() => setShowEditModal(true)}
-                className="rounded-xl border px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
               >
-                Edit
+                ✎ Edit
               </button>
 
               <button
                 onClick={handleDeleteJob}
-                className="rounded-xl border px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
               >
-                Close Job
+                ⊙ Close Job
               </button>
             </div>
           </div>
 
-          {showAssignedWorker && (
-            <div className="mb-8 rounded-2xl border border-sky-200 bg-sky-50/60 p-5">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700">
-                <span>👤</span>
+          {workerAssigned && (
+            <div className="mt-7 rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <span>♙</span>
                 <span>Worker Assigned</span>
               </div>
 
-              <div className="flex items-start gap-4">
-                {job.selected_worker_photo_data_url ? (
-                  <img
-                    src={job.selected_worker_photo_data_url}
-                    alt={job.selected_worker_name}
-                    className="h-16 w-16 rounded-full object-cover border"
-                  />
-                ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border bg-slate-100 text-xl font-semibold text-slate-600">
-                    {job.selected_worker_name?.[0]?.toUpperCase() || "W"}
-                  </div>
-                )}
-
-                <div className="flex-1">
-                  <h2 className="text-2xl font-semibold text-slate-900">
-                    {job.selected_worker_name}
-                  </h2>
-
-                  <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-                    {job.selected_worker_bio ||
-                      "Experienced worker assigned to this project."}
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-6 text-sm text-slate-700">
-                    <div className="flex items-center gap-2">
-                      <span className="text-yellow-500">⭐</span>
-                      <span>
-                        <span className="font-semibold">
-                          {job.selected_worker_rating ?? 4.8}
-                        </span>{" "}
-                        ({job.selected_worker_reviews_count ?? 127} reviews)
-                      </span>
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-4">
+                  {job.selected_worker_photo_data_url ? (
+                    <img
+                      src={job.selected_worker_photo_data_url}
+                      alt={job.selected_worker_name || "Assigned worker"}
+                      className="h-16 w-16 rounded-full border object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full border bg-slate-100 text-xl font-semibold text-slate-600">
+                      {job.selected_worker_name?.[0]?.toUpperCase() || "W"}
                     </div>
+                  )}
 
-                    <div>
-                      <span className="font-semibold">
-                        {job.selected_worker_completed_jobs_count ?? 156}
-                      </span>{" "}
-                      jobs completed
-                    </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-950">
+                      {job.selected_worker_name || "Assigned Worker"}
+                    </h2>
 
-                    <div>
-                      Joined {job.selected_worker_joined_text || "January 2023"}
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                      {job.selected_worker_bio ||
+                        "Worker selected for this job."}
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-600">
+                      {job.selected_worker_rating && (
+                        <span>⭐ {job.selected_worker_rating} rating</span>
+                      )}
+
+                      {job.selected_worker_completed_jobs_count && (
+                        <span>
+                          {job.selected_worker_completed_jobs_count} jobs
+                          completed
+                        </span>
+                      )}
+
+                      {job.selected_worker_joined_text && (
+                        <span>Joined {job.selected_worker_joined_text}</span>
+                      )}
                     </div>
                   </div>
+                </div>
+
+                <div className="flex shrink-0 flex-wrap gap-3">
+                  <button
+                    onClick={() => navigate(`/chat?jobId=${job.id}`)}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Message Worker
+                  </button>
+
+                  {!jobCompleted && (
+                    <button
+                      onClick={() =>
+                        alert(
+                          "Mark as completed is already handled in your completion flow. We can wire this button to that endpoint next."
+                        )
+                      }
+                      className="rounded-lg border border-green-500 px-4 py-2 text-sm font-semibold text-green-600 hover:bg-green-50"
+                    >
+                      Mark as Completed
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          <div className="mb-8 grid gap-8 border-b pb-8 sm:grid-cols-2 lg:grid-cols-3">
+          {!workerAssigned && (
+            <div className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+              <p className="text-sm font-semibold text-amber-900">
+                No worker assigned yet
+              </p>
+
+              <p className="mt-1 text-sm text-amber-700">
+                Review applicants and select a worker before the job can start.
+              </p>
+
+              <button
+                onClick={() => setShowApplicantsModal(true)}
+                className="mt-4 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+              >
+                View Applicants
+              </button>
+            </div>
+          )}
+
+          <div className="mt-8 grid gap-x-12 gap-y-7 border-b border-slate-200 pb-8 sm:grid-cols-2">
+            <InfoItem icon="💲" label="Budget" value={budgetLabel(job)} />
             <InfoItem
-              label="Budget"
-              value={`$${job.budget_min}-${job.budget_max}`}
-            />
-            <InfoItem
+              icon="📍"
               label="Location"
-              value={`${job.city}, ${job.country}`}
+              value={formatLocation(job) || "Not set"}
             />
-            <InfoItem label="Category" value={job.category} />
-            <InfoItem label="Posted" value={formatTimeAgo(job.created_at)} />
-            <InfoItem
-              label="Deadline"
-              value={`${job.deadline_value} ${job.deadline_unit}`}
-            />
-            <InfoItem
-              label="Duration"
-              value={`${job.estimated_duration_value} ${job.estimated_duration_unit}`}
-            />
+            <InfoItem icon="🏷️" label="Category" value={job.category || "Not set"} />
+            <InfoItem icon="🕘" label="Posted" value={formatTimeAgo(job.created_at)} />
+            <InfoItem icon="📅" label="Deadline" value={deadlineLabel(job)} />
+            <InfoItem icon="🧳" label="Duration" value={durationLabel(job)} />
           </div>
 
-          <div className="mb-8">
-            <h2 className="mb-4 text-2xl font-semibold text-slate-900">
-              Description
-            </h2>
-            <p className="text-base leading-8 text-slate-700">
-              {job.description}
+          <section className="mt-8">
+            <h2 className="text-xl font-bold text-slate-950">Description</h2>
+            <p className="mt-4 whitespace-pre-line break-words text-sm leading-7 text-slate-700">
+              {job.description || "No description provided."}
             </p>
-          </div>
+          </section>
 
-          <div className="mb-8">
-            <h2 className="mb-4 text-2xl font-semibold text-slate-900">
-              Skills Required
-            </h2>
+          <section className="mt-8">
+            <h2 className="text-xl font-bold text-slate-950">Skills Required</h2>
 
-            {job.skills_required.length === 0 ? (
-              <p className="text-sm text-slate-500">No specific skills listed</p>
-            ) : (
-              <div className="flex flex-wrap gap-3">
+            {Array.isArray(job.skills_required) &&
+            job.skills_required.length > 0 ? (
+              <div className="mt-4 flex flex-wrap gap-2">
                 {job.skills_required.map((skill) => (
                   <span
                     key={skill}
-                    className="rounded-2xl bg-slate-100 px-4 py-2 text-sm text-slate-700"
+                    className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
                   >
                     {skill}
                   </span>
                 ))}
               </div>
+            ) : (
+              <p className="mt-4 text-sm text-slate-500">
+                No specific skills listed.
+              </p>
             )}
-          </div>
+          </section>
 
           {job.notes && (
-            <div className="mb-8">
-              <h2 className="mb-4 text-2xl font-semibold text-slate-900">
-                Notes
-              </h2>
-              <p className="text-base leading-8 text-slate-700">
+            <section className="mt-8">
+              <h2 className="text-xl font-bold text-slate-950">Notes</h2>
+              <p className="mt-4 whitespace-pre-line break-words text-sm leading-7 text-slate-700">
                 {job.notes}
               </p>
-            </div>
+            </section>
           )}
 
-          {/* Review Section */}
-          {jobCompleted && !reviewSubmitted && (
-            <div className="mt-6 rounded-xl border p-4">
-              <h3 className="mb-3 font-semibold text-slate-900">Leave a Review for the Worker</h3>
+          {jobCompleted && !reviewSubmitted && workerAssigned && (
+            <section className="mt-8 rounded-2xl border border-slate-200 p-5">
+              <h3 className="font-semibold text-slate-900">
+                Leave a Review for the Worker
+              </h3>
 
-              <div className="mb-3 flex gap-2">
+              <div className="mt-4 flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
@@ -307,50 +378,61 @@ export default function PosterJobDetail() {
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Write your feedback..."
                 rows={3}
-                className="mb-3 w-full rounded-lg border p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="mt-4 w-full rounded-lg border p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
 
               <button
                 type="button"
                 onClick={handleSubmitReview}
                 disabled={rating === 0}
-                className="rounded-lg bg-green-500 px-4 py-2 text-white transition-colors hover:bg-green-600 disabled:opacity-50"
+                className="mt-4 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Submit Review
               </button>
-            </div>
+            </section>
           )}
 
           {reviewSubmitted && (
-            <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 font-medium text-emerald-700">
-              ✅ Review submitted! Thank you.
+            <div className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-4 font-medium text-emerald-700">
+              Review submitted. Thank you.
             </div>
           )}
         </div>
       </div>
 
-      {job && (
-        <Modal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          title="Edit Job"
-        >
-          <CreateJobForm
-            mode="edit"
-            initialValues={job}
-            onSuccess={handleEditSuccess}
-            onCancel={() => setShowEditModal(false)}
-          />
-        </Modal>
-      )}
-
-      {job && (
-        <ApplicantsModal
-          isOpen={showApplicantsModal}
-          onClose={() => setShowApplicantsModal(false)}
-          job={job}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit Job"
+      >
+        <CreateJobForm
+          mode="edit"
+          initialValues={job}
+          onSuccess={handleEditSuccess}
+          onCancel={() => setShowEditModal(false)}
         />
-      )}
+      </Modal>
+
+      <ApplicantsModal
+        isOpen={showApplicantsModal}
+        onClose={() => setShowApplicantsModal(false)}
+        job={job}
+      />
+    </div>
+  );
+}
+
+function InfoItem({ icon, label, value }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="mt-1 text-slate-400">{icon}</div>
+
+      <div>
+        <p className="text-xs font-medium text-slate-500">{label}</p>
+        <p className="mt-1 text-sm font-semibold text-slate-900">
+          {value || "Not set"}
+        </p>
+      </div>
     </div>
   );
 }

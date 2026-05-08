@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { switchMode } from "../api/profile";
 import { useAuth } from "../auth/AuthContext";
 import { Bell } from "lucide-react";
-import { useChatContext } from "../context/ChatContext";
+import { useChatContext } from "../context/useChatContext";
 import {
   getNotifications,
   getUnreadNotificationCount,
