@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createPosterProfile } from "../api/profile";
 import { useAuth } from "../auth/AuthContext";
 import LocationDropdowns from "../components/LocationDropdowns";
+import ProfilePhotoUpload from "../components/ProfilePhotoUpload";
 export default function PosterProfileSetup() {
   const navigate = useNavigate();
   const { reload } = useAuth();
@@ -178,30 +179,22 @@ export default function PosterProfileSetup() {
                 Personal Information
               </h2>
 
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">
-                  Profile Photo
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleFileChange}
-                  className="w-full rounded-lg border p-2"
-                />
-
-                <FieldError message={errors.photo_data_url} />
-
-                {form.photo_data_url && (
-                  <img
-                    src={form.photo_data_url}
-                    alt="Profile preview"
-                    className="h-20 w-20 rounded-full object-cover border mt-3"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="md:col-span-2">
+                  <ProfilePhotoUpload
+                    id="poster-profile-photo"
+                    value={form.photo_data_url}
+                    onChange={(photoDataUrl) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        photo_data_url: photoDataUrl,
+                      }))
+                    }
+                    label="Profile photo"
+                    error={errors.photo_data_url}
                   />
-                )}
-              </div>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <input
                     name="name"

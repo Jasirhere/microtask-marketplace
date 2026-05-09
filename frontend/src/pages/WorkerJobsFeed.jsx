@@ -5,7 +5,6 @@ import {
   DollarSign,
   Filter,
   MapPin,
-  Navigation,
   Search,
   Tag,
   X,
@@ -17,18 +16,8 @@ import { LOCATION_DATA } from "../data/locations";
 
 import DashboardHeader from "../components/DashboardHeader";
 import ApplyJobModal from "../components/ApplyJobModal";
+import { WORKER_SKILL_OPTIONS } from "../data/skills";
 
-const CATEGORY_OPTIONS = [
-  "Web Development",
-  "Mobile Development",
-  "Design",
-  "Writing & Content",
-  "Moving & Delivery",
-  "Home Services",
-  "Marketing",
-  "Cleaning",
-  "Other",
-];
 
 function formatTimeAgo(dateString) {
   if (!dateString) return "Recently";
@@ -79,17 +68,15 @@ export default function WorkerJobsFeed() {
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("NEAREST");
+  const [sortBy, setSortBy] = useState("NEWEST");
 
-  const [showNearestJobs, setShowNearestJobs] = useState(true);
-  const [maxDistance, setMaxDistance] = useState(200);
   const [includeRemoteJobs, setIncludeRemoteJobs] = useState(false);
 
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCities, setSelectedCities] = useState([]);
 
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedSkills, setSelectedSkills] = useState([]);
   const [budgetMin, setBudgetMin] = useState(0);
   const [budgetMax, setBudgetMax] = useState(5000);
 
@@ -160,26 +147,24 @@ export default function WorkerJobsFeed() {
     );
   }
 
-  function toggleCategory(category) {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((item) => item !== category)
-        : [...prev, category]
+  function toggleSkill(skill) {
+    setSelectedSkills((prev) =>
+      prev.includes(skill)
+        ? prev.filter((item) => item !== skill)
+        : [...prev, skill]
     );
   }
 
   function clearAllFilters() {
     setSearch("");
-    setShowNearestJobs(false);
-    setMaxDistance(200);
     setIncludeRemoteJobs(false);
     setSelectedCountry("");
     setSelectedState("");
     setSelectedCities([]);
-    setSelectedCategories([]);
+    setSelectedSkills([]);
     setBudgetMin(0);
     setBudgetMax(5000);
-    setSortBy("NEAREST");
+    setSortBy("NEWEST");
   }
 
   const selectedCountryData = useMemo(() => {
@@ -198,7 +183,7 @@ export default function WorkerJobsFeed() {
     Number(Boolean(selectedCountry)) +
     Number(Boolean(selectedState)) +
     selectedCities.length +
-    selectedCategories.length +
+    selectedSkills.length +
     Number(budgetMin > 0 || budgetMax < 5000) +
     Number(includeRemoteJobs);
 
@@ -216,9 +201,13 @@ export default function WorkerJobsFeed() {
       const matchesCity =
         selectedCities.length === 0 || selectedCities.includes(job.city);
 
-      const matchesCategory =
-        selectedCategories.length === 0 ||
-        selectedCategories.includes(job.category);
+      const jobSkills = Array.isArray(job.skills_required)
+        ? job.skills_required
+        : [];
+
+      const matchesSkills =
+        selectedSkills.length === 0 ||
+        selectedSkills.some((skill) => jobSkills.includes(skill));
 
       const jobBudgetMin = Number(job.budget_min || 0);
       const jobBudgetMax = Number(job.budget_max || jobBudgetMin || 0);
@@ -238,7 +227,7 @@ export default function WorkerJobsFeed() {
         matchesCountry &&
         matchesState &&
         matchesCity &&
-        matchesCategory &&
+        matchesSkills &&
         matchesBudget &&
         matchesRemote
       );
@@ -269,7 +258,7 @@ export default function WorkerJobsFeed() {
     selectedCountry,
     selectedState,
     selectedCities,
-    selectedCategories,
+    selectedSkills,
     budgetMin,
     budgetMax,
     includeRemoteJobs,
@@ -342,39 +331,6 @@ export default function WorkerJobsFeed() {
                   setIncludeRemoteJobs(false);
                 }}
               >
-                <div className="rounded-xl border border-blue-100 bg-blue-50 p-3">
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={showNearestJobs}
-                      onChange={(e) => setShowNearestJobs(e.target.checked)}
-                      className="h-4 w-4 rounded"
-                    />
-                    <Navigation className="h-4 w-4 text-blue-600" />
-                    Show Nearest Jobs
-                  </label>
-
-                  <div className="mt-3">
-                    <div className="mb-1 text-xs font-medium text-blue-700">
-                      Max Distance (miles)
-                    </div>
-                    <input
-                      type="range"
-                      min="1"
-                      max="200"
-                      value={maxDistance}
-                      onChange={(e) => setMaxDistance(Number(e.target.value))}
-                      className="w-full"
-                    />
-                    <div className="mt-1 text-right text-xs font-semibold text-blue-700">
-                      {maxDistance} miles
-                    </div>
-                    <p className="mt-1 text-xs text-red-500">
-                      📍 Using your location
-                    </p>
-                  </div>
-                </div>
-
                 <label className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">
                   <input
                     type="checkbox"
@@ -462,22 +418,36 @@ export default function WorkerJobsFeed() {
 
               <FilterSection
                 icon={<Tag className="h-4 w-4 text-fuchsia-500" />}
-                title="Category"
+                title="Skills / Work Type"
+                onClear={() => setSelectedSkills([])}
               >
-                <div className="space-y-2">
-                  {CATEGORY_OPTIONS.map((category) => (
-                    <label
-                      key={category}
-                      className="flex items-center gap-2 text-sm text-slate-700"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category)}
-                        onChange={() => toggleCategory(category)}
-                        className="h-4 w-4 rounded"
-                      />
-                      {category}
-                    </label>
+                <div className="max-h-80 space-y-5 overflow-y-auto pr-1">
+                  {WORKER_SKILL_OPTIONS.map((group) => (
+                    <div key={group.group}>
+                      <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                        {group.group}
+                      </h4>
+
+                      <div className="space-y-2">
+                        {group.skills.map((skill) => (
+                          <label
+                            key={skill}
+                            className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${selectedSkills.includes(skill)
+                              ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700"
+                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                              }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedSkills.includes(skill)}
+                              onChange={() => toggleSkill(skill)}
+                              className="h-4 w-4 rounded"
+                            />
+                            {skill}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </FilterSection>
@@ -540,7 +510,6 @@ export default function WorkerJobsFeed() {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-400 md:w-56"
               >
-                <option value="NEAREST">Nearest First</option>
                 <option value="NEWEST">Newest First</option>
                 <option value="BUDGET_HIGH">Highest Budget</option>
                 <option value="BUDGET_LOW">Lowest Budget</option>
@@ -574,11 +543,11 @@ export default function WorkerJobsFeed() {
                   />
                 ))}
 
-                {selectedCategories.map((category) => (
+                {selectedSkills.map((skill) => (
                   <FilterPill
-                    key={category}
-                    label={category}
-                    onRemove={() => toggleCategory(category)}
+                    key={skill}
+                    label={skill}
+                    onRemove={() => toggleSkill(skill)}
                   />
                 ))}
 
@@ -590,13 +559,11 @@ export default function WorkerJobsFeed() {
 
             <p className="mt-4 text-sm text-slate-700">
               Found {filteredJobs.length} job{filteredJobs.length === 1 ? "" : "s"}{" "}
-              {sortBy === "NEAREST"
-                ? "sorted by nearest location"
-                : sortBy === "NEWEST"
+              {sortBy === "NEWEST"
                 ? "sorted by newest first"
                 : sortBy === "BUDGET_HIGH"
-                ? "sorted by highest budget"
-                : "sorted by lowest budget"}
+                  ? "sorted by highest budget"
+                  : "sorted by lowest budget"}
             </p>
 
             <div className="mt-6">
@@ -701,10 +668,31 @@ function JobCard({ job, applied, onView, onApply }) {
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
             {job.description}
           </p>
+
+          {Array.isArray(job.skills_required) && job.skills_required.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {job.skills_required.slice(0, 4).map((skill) => (
+                <span
+                  key={skill}
+                  className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+                >
+                  {skill}
+                </span>
+              ))}
+
+              {job.skills_required.length > 4 && (
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+                  +{job.skills_required.length - 4} more
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <span className="shrink-0 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-          {job.category || "General"}
+          {Array.isArray(job.skills_required) && job.skills_required.length > 0
+            ? job.skills_required[0]
+            : job.category || "General"}
         </span>
       </div>
 

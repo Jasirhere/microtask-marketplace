@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { createWorkerProfile } from "../api/profile";
 import { useAuth } from "../auth/AuthContext";
 import LocationDropdowns from "../components/LocationDropdowns";
+import ProfilePhotoUpload from "../components/ProfilePhotoUpload";
+import SkillsMultiSelect from "../components/SkillsMultiSelect";
 export default function WorkerProfileSetup() {
   const navigate = useNavigate();
   const { reload } = useAuth();
@@ -13,7 +15,7 @@ export default function WorkerProfileSetup() {
     photo_data_url: "",
     location: "",
     bio: "",
-    skills: "",
+    skills: [],
   });
 
   const [errors, setErrors] = useState({});
@@ -41,17 +43,12 @@ export default function WorkerProfileSetup() {
       nextErrors.location = "Location is too short";
     }
 
-    if (!form.skills.trim()) {
-      nextErrors.skills = "Add at least one skill";
-    } else {
-      const skillList = form.skills
-        .split(",")
-        .map((skill) => skill.trim())
-        .filter(Boolean);
+    if (!Array.isArray(form.skills) || form.skills.length === 0) {
+      nextErrors.skills = "Select at least one skill";
+    }
 
-      if (skillList.length === 0) {
-        nextErrors.skills = "Add at least one valid skill";
-      }
+    if (Array.isArray(form.skills) && form.skills.length > 12) {
+      nextErrors.skills = "You can select up to 12 skills";
     }
 
     if (!form.bio.trim()) {
@@ -151,10 +148,7 @@ export default function WorkerProfileSetup() {
         photo_data_url: form.photo_data_url,
         location: form.location.trim(),
         bio: form.bio.trim(),
-        skills: form.skills
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
+        skills: form.skills,
       };
 
       await createWorkerProfile(payload);
@@ -198,30 +192,22 @@ export default function WorkerProfileSetup() {
                 Personal Information
               </h2>
 
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">
-                  Profile Photo
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleFileChange}
-                  className="w-full border p-2 rounded-lg"
-                />
-
-                <FieldError message={errors.photo_data_url} />
-
-                {form.photo_data_url && (
-                  <img
-                    src={form.photo_data_url}
-                    alt="Profile preview"
-                    className="h-20 w-20 rounded-full mt-3 object-cover border"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="md:col-span-2">
+                  <ProfilePhotoUpload
+                    id="worker-profile-photo"
+                    value={form.photo_data_url}
+                    onChange={(photoDataUrl) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        photo_data_url: photoDataUrl,
+                      }))
+                    }
+                    label="Profile photo"
+                    error={errors.photo_data_url}
                   />
-                )}
-              </div>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <input
                     name="name"
@@ -265,16 +251,27 @@ export default function WorkerProfileSetup() {
               </h2>
 
               <div className="mb-4">
-                <input
-                  name="skills"
-                  placeholder="Skills * (comma separated)"
-                  value={form.skills}
-                  onChange={handleChange}
-                  className={`w-full p-3 border rounded-xl ${
-                    errors.skills ? "border-red-500" : ""
-                  }`}
-                />
-                <FieldError message={errors.skills} />
+                <div className="md:col-span-2">
+                  <SkillsMultiSelect
+                    value={form.skills}
+                    onChange={(skills) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        skills,
+                      }));
+
+                      setErrors((prev) => ({
+                        ...prev,
+                        skills: "",
+                      }));
+
+                      setServerError("");
+                    }}
+                    error={errors.skills}
+                    label="Skills you can offer"
+                    maxSelected={12}
+                  />
+                </div>
               </div>
 
               <div>
