@@ -1,11 +1,45 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MoreVertical, Paperclip, Send, UserRound } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { getChatMessages } from "../api/chat";
 import { useAuth } from "../auth/AuthContext";
 import ChatMessageBubble from "./ChatMessageBubble";
 
+function formatLastSeen(dateString) {
+  if (!dateString) return "Offline";
+
+  const seen = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - seen;
+
+  const minutes = Math.floor(diffMs / (1000 * 60));
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+
+  if (minutes < 1) return "Last seen just now";
+  if (minutes < 60) return `Last seen ${minutes}m ago`;
+  if (hours < 24) return `Last seen ${hours}h ago`;
+
+  return "Offline";
+}
+
+function TypingIndicator({ name }) {
+  return (
+    <div className="flex items-center gap-2 text-sm text-slate-500">
+      <span>{name} is typing</span>
+
+      <span className="flex gap-1">
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.2s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.1s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
+      </span>
+    </div>
+  );
+}
+
 export default function ChatWindow({ selectedChat, onChatMetaChange }) {
   const { user } = useAuth();
   const currentUserId = user?.id;
+  const navigate = useNavigate();
 
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,10 +77,13 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
     async function setupChat() {
       try {
         setLoading(true);
+        setMessages([]);
+        setIsOtherUserTyping(false);
+
         const data = await getChatMessages(selectedChat.job_id);
 
         if (isMounted) {
-          setMessages(data);
+          setMessages(Array.isArray(data) ? data : []);
           setLoading(false);
         }
 
@@ -55,6 +92,7 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
 
         ws.onopen = () => {
           if (!isMounted) return;
+
           setSocketConnected(true);
 
           ws.send(
@@ -84,9 +122,7 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
               );
             }
 
-            if (onChatMetaChangeRef.current) {
-              onChatMetaChangeRef.current();
-            }
+            onChatMetaChangeRef.current?.({ silent: true });
             return;
           }
 
@@ -135,6 +171,7 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
         socketRef.current = ws;
       } catch (err) {
         console.error("Failed to initialize chat:", err);
+
         if (isMounted) {
           setLoading(false);
         }
@@ -145,11 +182,13 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
 
     return () => {
       isMounted = false;
-      if (ws) {
-        ws.close();
-      }
+
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
+      }
+
+      if (ws) {
+        ws.close();
       }
     };
   }, [selectedChat?.job_id, selectedChat?.other_user_id, currentUserId]);
@@ -158,8 +197,18 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOtherUserTyping]);
 
+  const lastMineMessageId = useMemo(() => {
+    const mine = [...messages]
+      .reverse()
+      .find((message) => message.sender_user_id === currentUserId);
+
+    return mine?.id;
+  }, [messages, currentUserId]);
+
   function sendTyping(isTyping) {
-    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) return;
+    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+      return;
+    }
 
     socketRef.current.send(
       JSON.stringify({
@@ -187,8 +236,11 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
 
   function handleSendMessage() {
     const text = input.trim();
+
     if (!text) return;
-    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) return;
+    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+      return;
+    }
 
     socketRef.current.send(
       JSON.stringify({
@@ -209,87 +261,90 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
       handleSendMessage();
     }
   }
+  function handleViewProfile() {
+    if (!selectedChat?.other_user_id) return;
 
-  const lastMineMessageId = useMemo(() => {
-    const mine = [...messages].reverse().find((m) => m.sender_user_id === currentUserId);
-    return mine?.id;
-  }, [messages, currentUserId]);
+    if (user?.current_mode === "poster") {
+      navigate(`/workers/${selectedChat.other_user_id}`);
+      return;
+    }
 
-  function formatLastSeen(dateString) {
-    if (!dateString) return "Offline";
-
-    const seen = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - seen;
-
-    const minutes = Math.floor(diffMs / (1000 * 60));
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-
-    if (minutes < 1) return "Last seen just now";
-    if (minutes < 60) return `Last seen ${minutes} min ago`;
-    if (hours < 24) return `Last seen ${hours} hr ago`;
-    return "Offline";
+    navigate(`/posters/${selectedChat.other_user_id}`);
   }
-
   return (
-    <div className="flex h-full flex-col bg-white">
-      <div className="flex items-center justify-between gap-4 border-b bg-slate-50 px-6 py-4">
-        <div className="flex items-center gap-4">
-          <div className="relative">
+    <section className="flex h-full flex-col bg-slate-50">
+      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="relative shrink-0">
             {selectedChat.other_user_photo_data_url ? (
               <img
                 src={selectedChat.other_user_photo_data_url}
                 alt={selectedChat.other_user_name}
-                className="h-12 w-12 rounded-full object-cover border"
+                className="h-12 w-12 rounded-full object-cover"
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border bg-slate-100 font-semibold text-slate-600">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700">
                 {selectedChat.other_user_name?.[0]?.toUpperCase() || "U"}
               </div>
             )}
 
             <span
-              className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                otherUserOnline ? "bg-green-500" : "bg-red-500"
-              }`}
+              className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${otherUserOnline ? "bg-emerald-500" : "bg-slate-300"
+                }`}
             />
           </div>
 
           <div className="min-w-0">
-            <h3 className="truncate text-2xl font-bold text-slate-900">
+            <h3 className="truncate text-base font-bold text-slate-900">
               {selectedChat.other_user_name}
             </h3>
-            <p className="truncate text-sm text-slate-500">
-              Job: {selectedChat.job_title}
+
+            <p className="truncate text-xs text-slate-500">
+              {selectedChat.job_title}
             </p>
-            <p className="mt-1 text-xs text-slate-400">
-              {otherUserOnline ? "Online" : formatLastSeen(otherUserLastSeenAt)}
+
+            <p className="mt-0.5 text-xs text-slate-400">
+              {isOtherUserTyping
+                ? `${selectedChat.other_user_name} is typing...`
+                : otherUserOnline
+                  ? "Online"
+                  : formatLastSeen(otherUserLastSeenAt)}
             </p>
           </div>
         </div>
 
-        <div className="text-sm">
-          {socketConnected ? (
-            <span className="rounded-full bg-green-100 px-3 py-1 text-green-700">
-              Connected
-            </span>
-          ) : (
-            <span className="rounded-full bg-red-100 px-3 py-1 text-red-700">
-              Not connected
-            </span>
-          )}
-        </div>
-      </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleViewProfile}
+            className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+          >
+            <UserRound className="h-4 w-4" />
+            View Profile
+          </button>
 
-      <div className="flex-1 overflow-y-auto bg-slate-50 px-6 py-6">
+          <button
+            type="button"
+            className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100"
+          >
+            <MoreVertical className="h-5 w-5" />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto px-5 py-6">
         {loading ? (
-          <div className="text-slate-500">Loading messages...</div>
+          <div className="text-sm text-slate-500">Loading messages...</div>
         ) : messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-slate-500">
+          <div className="flex h-full items-center justify-center text-sm text-slate-500">
             No messages yet. Start the conversation.
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
+            <div className="mx-auto w-fit rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-700">
+              Chat activated. You can now communicate about this job.
+            </div>
+
             {messages.map((message) => (
               <ChatMessageBubble
                 key={message.id}
@@ -300,9 +355,7 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
             ))}
 
             {isOtherUserTyping && (
-              <div className="text-sm text-slate-500">
-                {selectedChat.other_user_name} is typing...
-              </div>
+              <TypingIndicator name={selectedChat.other_user_name} />
             )}
 
             <div ref={bottomRef} />
@@ -310,26 +363,34 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
         )}
       </div>
 
-      <div className="border-t bg-white p-5">
+      <footer className="border-t border-slate-200 bg-white px-5 py-4">
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100"
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
+
           <input
             type="text"
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="flex-1 rounded-2xl border px-4 py-3 outline-none focus:border-violet-400"
+            className="min-w-0 flex-1 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
           />
 
           <button
+            type="button"
             onClick={handleSendMessage}
-            disabled={!socketConnected}
-            className="rounded-2xl bg-violet-600 px-5 py-3 font-semibold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!socketConnected || !input.trim()}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Send
+            <Send className="h-5 w-5" />
           </button>
         </div>
-      </div>
-    </div>
+      </footer>
+    </section>
   );
 }

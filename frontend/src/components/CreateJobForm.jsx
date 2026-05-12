@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { createJob, getJobCategories, updateJob } from "../api/jobs";
+import { useMemo, useState } from "react";
+import { createJob, updateJob } from "../api/jobs";
 import { LOCATION_DATA } from "../data/locations";
-
+import SkillsMultiSelect from "./SkillsMultiSelect";
 
 export default function CreateJobForm({
   onSuccess,
@@ -9,92 +9,36 @@ export default function CreateJobForm({
   initialValues = null,
   mode = "create",
 }) {
-  const [categories, setCategories] = useState([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: "",
+    title: initialValues?.title || "",
+    description: initialValues?.description || "",
+    country: initialValues?.country || "",
+    state: initialValues?.state || "",
+    city: initialValues?.city || "",
+    area: initialValues?.area || "",
+    address_details: initialValues?.address_details || "",
+    latitude: initialValues?.latitude ?? null,
+    longitude: initialValues?.longitude ?? null,
 
-    country: "",
-    state: "",
-    city: "",
-    area: "",
-    address_details: "",
-    latitude: null,
-    longitude: null,
+    budget_min: initialValues?.budget_min ?? "",
+    budget_max: initialValues?.budget_max ?? "",
 
-    budget_min: "",
-    budget_max: "",
+    deadline_value: initialValues?.deadline_value ?? "",
+    deadline_unit: initialValues?.deadline_unit || "days",
 
-    deadline_value: "",
-    deadline_unit: "days",
+    estimated_duration_value: initialValues?.estimated_duration_value ?? "",
+    estimated_duration_unit: initialValues?.estimated_duration_unit || "hours",
 
-    estimated_duration_value: "",
-    estimated_duration_unit: "hours",
+    skills_required: Array.isArray(initialValues?.skills_required)
+      ? initialValues.skills_required
+      : [],
 
-    skills_required: "",
-    notes: "",
+    notes: initialValues?.notes || "",
   });
 
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const data = await getJobCategories();
-        setCategories(data);
-
-        if (initialValues) {
-          setForm({
-            title: initialValues.title || "",
-            description: initialValues.description || "",
-            category: initialValues.category || (data[0] || ""),
-
-            country: initialValues.country || "",
-            state: initialValues.state || "",
-            city: initialValues.city || "",
-            area: initialValues.area || "",
-            address_details: initialValues.address_details || "",
-            latitude: initialValues.latitude ?? null,
-            longitude: initialValues.longitude ?? null,
-
-            budget_min: initialValues.budget_min ?? "",
-            budget_max: initialValues.budget_max ?? "",
-
-            deadline_value: initialValues.deadline_value ?? "",
-            deadline_unit: initialValues.deadline_unit || "days",
-
-            estimated_duration_value:
-              initialValues.estimated_duration_value ?? "",
-            estimated_duration_unit:
-              initialValues.estimated_duration_unit || "hours",
-
-            skills_required: Array.isArray(initialValues.skills_required)
-              ? initialValues.skills_required.join(", ")
-              : "",
-
-            notes: initialValues.notes || "",
-          });
-        } else if (data.length > 0) {
-          setForm((prev) => ({
-            ...prev,
-            category: data[0],
-          }));
-        }
-      } catch (err) {
-        console.error(err);
-        setServerError("Failed to load job categories");
-      } finally {
-        setLoadingCategories(false);
-      }
-    }
-
-    loadCategories();
-  }, [initialValues]);
 
   const selectedCountry = useMemo(() => {
     return LOCATION_DATA.find((item) => item.country === form.country);
@@ -107,7 +51,6 @@ export default function CreateJobForm({
   const stateOptions = selectedCountry?.states || [];
   const cityOptions = selectedState?.cities || [];
 
-
   function FieldError({ message }) {
     if (!message) return null;
     return <p className="mt-1 text-sm text-red-600">{message}</p>;
@@ -115,8 +58,8 @@ export default function CreateJobForm({
 
   function inputClass(fieldName) {
     return `w-full rounded-xl border px-4 py-3 outline-none ${fieldErrors[fieldName]
-      ? "border-red-500 bg-red-50 focus:border-red-500"
-      : "focus:border-blue-500"
+        ? "border-red-500 bg-red-50 focus:border-red-500"
+        : "focus:border-blue-500"
       }`;
   }
 
@@ -149,11 +92,6 @@ export default function CreateJobForm({
     } else if (description.length > 1000) {
       errors.description = "Description cannot exceed 1000 characters";
     }
-
-    if (!form.category) {
-      errors.category = "Category is required";
-    }
-
     if (!form.country) {
       errors.country = "Country is required";
     }
@@ -224,20 +162,13 @@ export default function CreateJobForm({
         "For days, duration cannot exceed 30 days";
     }
 
-    if (form.skills_required.trim()) {
-      const skills = form.skills_required
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-
-      if (skills.length > 10) {
-        errors.skills_required = "You can add maximum 10 skills";
-      }
-
-      const invalidSkill = skills.find((skill) => skill.length > 30);
-      if (invalidSkill) {
-        errors.skills_required = "Each skill must be under 30 characters";
-      }
+    if (
+      !Array.isArray(form.skills_required) ||
+      form.skills_required.length === 0
+    ) {
+      errors.skills_required = "Select at least one work type";
+    } else if (form.skills_required.length > 5) {
+      errors.skills_required = "Select up to 5 work types";
     }
 
     if (notes.length > 500) {
@@ -304,12 +235,26 @@ export default function CreateJobForm({
     setServerError("");
   }
 
+  function handleSkillsChange(skills) {
+    setForm((prev) => ({
+      ...prev,
+      skills_required: skills,
+    }));
+
+    setFieldErrors((prev) => ({
+      ...prev,
+      skills_required: "",
+    }));
+
+    setServerError("");
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setServerError("");
 
     if (!validateForm()) {
-      setServerError("Please fix the highlighted fields before creating the job.");
+      setServerError("Please fix the highlighted fields before saving the job.");
       return;
     }
 
@@ -319,8 +264,7 @@ export default function CreateJobForm({
       const payload = {
         title: form.title.trim(),
         description: form.description.trim(),
-        category: form.category,
-
+        category: form.skills_required[0],
         country: form.country,
         state: form.state,
         city: form.city,
@@ -338,10 +282,7 @@ export default function CreateJobForm({
         estimated_duration_value: Number(form.estimated_duration_value),
         estimated_duration_unit: form.estimated_duration_unit,
 
-        skills_required: form.skills_required
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean),
+        skills_required: form.skills_required,
 
         notes: form.notes.trim() || null,
       };
@@ -362,10 +303,6 @@ export default function CreateJobForm({
     }
   }
 
-  if (loadingCategories) {
-    return <div>Loading form...</div>;
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       {serverError && (
@@ -384,6 +321,7 @@ export default function CreateJobForm({
             className={inputClass("title")}
             placeholder="e.g. Move furniture to new apartment"
           />
+
           <div className="mt-1 flex justify-between text-sm">
             <FieldError message={fieldErrors.title} />
             <span className="text-slate-400">{form.title.length}/80</span>
@@ -402,6 +340,7 @@ export default function CreateJobForm({
             className={inputClass("description")}
             placeholder="Describe the job clearly, including what needs to be done, location context, and any tools needed..."
           />
+
           <div className="mt-1 flex justify-between text-sm">
             <FieldError message={fieldErrors.description} />
             <span className="text-slate-400">
@@ -409,24 +348,6 @@ export default function CreateJobForm({
             </span>
           </div>
         </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium">Category *</label>
-          <select
-            name="category"
-            value={form.category}
-            onChange={handleChange}
-            className={inputClass("category")}
-          >
-            {categories.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-          <FieldError message={fieldErrors.category} />
-        </div>
-
         <div>
           <label className="mb-1 block text-sm font-medium">Country *</label>
           <select
@@ -436,12 +357,14 @@ export default function CreateJobForm({
             className={inputClass("country")}
           >
             <option value="">Select country</option>
+
             {LOCATION_DATA.map((item) => (
               <option key={item.country} value={item.country}>
                 {item.country}
               </option>
             ))}
           </select>
+
           <FieldError message={fieldErrors.country} />
         </div>
 
@@ -466,6 +389,7 @@ export default function CreateJobForm({
               </option>
             ))}
           </select>
+
           <FieldError message={fieldErrors.state} />
         </div>
 
@@ -488,6 +412,7 @@ export default function CreateJobForm({
               </option>
             ))}
           </select>
+
           <FieldError message={fieldErrors.city} />
         </div>
 
@@ -502,6 +427,7 @@ export default function CreateJobForm({
             className={inputClass("area")}
             placeholder="e.g. Gulistan-e-Johar"
           />
+
           <FieldError message={fieldErrors.area} />
         </div>
 
@@ -517,6 +443,7 @@ export default function CreateJobForm({
             className={inputClass("address_details")}
             placeholder="House number, floor, street, landmark..."
           />
+
           <div className="mt-1 flex justify-between text-sm">
             <FieldError message={fieldErrors.address_details} />
             <span className="text-slate-400">
@@ -538,6 +465,7 @@ export default function CreateJobForm({
             placeholder="e.g. 5000"
             min="1"
           />
+
           <FieldError message={fieldErrors.budget_min} />
         </div>
 
@@ -554,6 +482,7 @@ export default function CreateJobForm({
             placeholder="e.g. 8000"
             min="1"
           />
+
           <FieldError message={fieldErrors.budget_max} />
         </div>
 
@@ -566,12 +495,13 @@ export default function CreateJobForm({
               value={form.deadline_value}
               onChange={handleChange}
               className={`w-1/2 rounded-xl border px-4 py-3 outline-none ${fieldErrors.deadline_value
-                ? "border-red-500 bg-red-50"
-                : "focus:border-blue-500"
+                  ? "border-red-500 bg-red-50"
+                  : "focus:border-blue-500"
                 }`}
               placeholder="2"
               min="1"
             />
+
             <select
               name="deadline_unit"
               value={form.deadline_unit}
@@ -583,6 +513,7 @@ export default function CreateJobForm({
               <option value="weeks">weeks</option>
             </select>
           </div>
+
           <FieldError message={fieldErrors.deadline_value} />
         </div>
 
@@ -597,12 +528,13 @@ export default function CreateJobForm({
               value={form.estimated_duration_value}
               onChange={handleChange}
               className={`w-1/2 rounded-xl border px-4 py-3 outline-none ${fieldErrors.estimated_duration_value
-                ? "border-red-500 bg-red-50"
-                : "focus:border-blue-500"
+                  ? "border-red-500 bg-red-50"
+                  : "focus:border-blue-500"
                 }`}
               placeholder="4"
               min="1"
             />
+
             <select
               name="estimated_duration_unit"
               value={form.estimated_duration_unit}
@@ -613,26 +545,18 @@ export default function CreateJobForm({
               <option value="days">days</option>
             </select>
           </div>
+
           <FieldError message={fieldErrors.estimated_duration_value} />
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-sm font-medium">
-            Skills Required
-          </label>
-          <input
-            name="skills_required"
+          <SkillsMultiSelect
             value={form.skills_required}
-            onChange={handleChange}
-            className={inputClass("skills_required")}
-            placeholder="e.g. lifting, packing, moving"
+            onChange={handleSkillsChange}
+            error={fieldErrors.skills_required}
+            label="Work Type"
+            maxSelected={5}
           />
-          <div className="mt-1 flex justify-between text-sm">
-            <FieldError message={fieldErrors.skills_required} />
-            <span className="text-xs text-slate-500">
-              Enter skills separated by commas. Max 10 skills.
-            </span>
-          </div>
         </div>
 
         <div className="md:col-span-2">
@@ -645,6 +569,7 @@ export default function CreateJobForm({
             className={inputClass("notes")}
             placeholder="Optional notes..."
           />
+
           <div className="mt-1 flex justify-between text-sm">
             <FieldError message={fieldErrors.notes} />
             <span className="text-slate-400">{form.notes.length}/500</span>

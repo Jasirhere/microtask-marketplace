@@ -16,7 +16,7 @@ from app.services.application_store import (
 from app.services.job_store import get_job_by_id, set_job_status
 from app.services.user_store import get_by_id
 from app.services.notification_store import create_notification
-
+from datetime import datetime, timezone
 router = APIRouter(prefix="/applications", tags=["applications"])
 
 
@@ -248,6 +248,7 @@ async def accept_application(application_id: str, current_user=Depends(get_curre
         )
 
     application.status = "SELECTED"
+    application.selected_at = datetime.now(timezone.utc)
     job.selected_worker_user_id = application.worker_user_id
     job.final_price = application.proposed_rate
     reject_other_applications(job.id, application.id)

@@ -14,7 +14,7 @@ import AccountSettingsModal from "./AccountSettingsModal";
 
 export default function DashboardHeader() {
   const { user, reload, logout } = useAuth();
-  const { unreadConversationCount } = useChatContext();
+  const { unreadConversationCount, unreadMessageCount } = useChatContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [showSettings, setShowSettings] = useState(false);
@@ -232,19 +232,25 @@ export default function DashboardHeader() {
 
             <div className="flex items-center gap-3">
               <button
-                onClick={() => navigate("/chat")}
-                className={`relative flex h-11 w-11 items-center justify-center rounded-full border transition ${isOnChatPage
-                  ? "bg-slate-100 border-slate-300"
-                  : "bg-white hover:bg-slate-50 border-slate-200"
+                onClick={() =>
+                  navigate("/chat", {
+                    state: { openUnread: true },
+                  })
+                }
+                className={`relative flex h-11 w-11 items-center justify-center rounded-full border transition ${unreadMessageCount > 0 && !isOnChatPage
+                    ? "border-red-300 bg-red-50 text-red-600 hover:bg-red-100"
+                    : isOnChatPage
+                      ? "border-slate-300 bg-slate-100 text-slate-700"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                   }`}
                 title="Messages"
                 type="button"
               >
                 <span className="text-lg">💬</span>
 
-                {unreadConversationCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white shadow">
-                    {unreadConversationCount > 99 ? "99+" : unreadConversationCount}
+                {unreadMessageCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white shadow">
+                    {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
                   </span>
                 )}
               </button>

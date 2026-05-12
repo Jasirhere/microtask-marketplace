@@ -1,5 +1,10 @@
+import { Check, CheckCheck } from "lucide-react";
+
 function formatTime(dateString) {
+  if (!dateString) return "";
+
   const date = new Date(dateString);
+
   return date.toLocaleTimeString([], {
     hour: "numeric",
     minute: "2-digit",
@@ -7,30 +12,43 @@ function formatTime(dateString) {
 }
 
 export default function ChatMessageBubble({ message, isMine, isLastMine }) {
+  const statusLabel = message.is_seen ? "Seen" : "Delivered";
+
   return (
     <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${
-          isMine
-            ? "bg-violet-600 text-white"
-            : "bg-slate-100 text-slate-900"
-        }`}
-      >
-        <p className="text-sm leading-6">{message.text}</p>
-
-        <div className="mt-2 flex items-center justify-end gap-2">
-          <p
-            className={`text-xs ${
-              isMine ? "text-violet-100" : "text-slate-500"
-            }`}
-          >
-            {formatTime(message.created_at)}
+      <div className={`max-w-[72%] ${isMine ? "items-end" : "items-start"}`}>
+        <div
+          className={`rounded-2xl px-4 py-3 shadow-sm ${
+            isMine
+              ? "rounded-br-md bg-blue-600 text-white"
+              : "rounded-bl-md border border-slate-200 bg-white text-slate-900"
+          }`}
+        >
+          <p className="whitespace-pre-wrap break-words text-sm leading-6">
+            {message.text}
           </p>
+        </div>
+
+        <div
+          className={`mt-1 flex items-center gap-1 text-xs ${
+            isMine ? "justify-end text-slate-400" : "justify-start text-slate-400"
+          }`}
+        >
+          <span>{formatTime(message.created_at)}</span>
 
           {isMine && isLastMine && (
-            <span className="text-xs text-violet-100">
-              {message.is_seen ? "Seen" : "Delivered"}
-            </span>
+            <>
+              <span>•</span>
+
+              <span className="flex items-center gap-1">
+                {message.is_seen ? (
+                  <CheckCheck className="h-3.5 w-3.5 text-blue-500" />
+                ) : (
+                  <Check className="h-3.5 w-3.5 text-slate-400" />
+                )}
+                {statusLabel}
+              </span>
+            </>
           )}
         </div>
       </div>

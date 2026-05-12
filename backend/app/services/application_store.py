@@ -15,6 +15,7 @@ def create_application(body: JobApplicationCreate, worker_user_id: str) -> JobAp
         cover_letter=body.cover_letter,
         status="APPLIED",
         created_at=datetime.now(timezone.utc),
+        selected_at=None,
     )
     _applications.append(application)
     return application

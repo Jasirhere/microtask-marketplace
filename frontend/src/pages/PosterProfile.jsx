@@ -141,7 +141,22 @@ export default function PosterProfile() {
         setSaveError("");
         setIsEditing(true);
     }
+    function formatResponseTime(minutes) {
+        if (minutes === undefined || minutes === null) return "No data";
 
+        if (minutes < 60) {
+            return `${Math.round(minutes)}m`;
+        }
+
+        const hours = minutes / 60;
+
+        if (hours < 24) {
+            return `${hours.toFixed(1)}h`;
+        }
+
+        const days = hours / 24;
+        return `${days.toFixed(1)}d`;
+    }
     function cancelEditing() {
         setIsEditing(false);
         setSaveError("");
@@ -196,7 +211,11 @@ export default function PosterProfile() {
 
     const totalSpent = posterJobs
         .filter((job) => job.payment_status === "PAID")
-        .reduce((sum, job) => sum + Number(job.budget_max || job.budget_min || 0), 0);
+        .reduce(
+            (sum, job) =>
+                sum + Number(job.final_price || job.paid_amount || job.payment_amount || 0),
+            0
+        );
 
     const workersHired = posterJobs.filter(
         (job) => job.status === "COMPLETED" || job.status === "ASSIGNED"
@@ -207,17 +226,10 @@ export default function PosterProfile() {
             <DashboardHeader />
 
             <div className="mx-auto max-w-7xl px-4 py-8">
-                {/* Cover Photo */}
-                <div className="relative mb-6 h-48 overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 md:h-64">
-                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926?w=1600')] bg-cover bg-center opacity-20"></div>
-                    <button className="absolute right-4 top-4 flex items-center gap-2 rounded-xl bg-black/30 px-4 py-2 text-sm text-white backdrop-blur-md transition-colors hover:bg-black/40">
-                        <Camera className="h-4 w-4" />
-                        Edit Cover
-                    </button>
-                </div>
+                
 
                 {/* Profile Header Card */}
-                <div className="relative -mt-20 mb-6 rounded-3xl border bg-white p-6 md:-mt-24 md:p-8">
+                <div className="relative mb-6 rounded-3xl border bg-white p-6 md:p-8">
                     <div className="flex flex-col gap-6 md:flex-row">
                         {/* Avatar */}
                         <div className="relative flex-shrink-0">
@@ -407,25 +419,6 @@ export default function PosterProfile() {
                     </div>
                 </div>
 
-                {/* Badges */}
-                <div className="mb-6 rounded-3xl border bg-white p-6">
-                    <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold">
-                        <Award className="h-5 w-5 text-amber-500" />
-                        Achievements & Badges
-                    </h2>
-
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                        {badges.map((badge) => (
-                            <div
-                                key={badge.id}
-                                className={`${badge.bg} rounded-2xl p-4 text-center transition-transform hover:scale-105`}
-                            >
-                                <badge.icon className={`mx-auto mb-2 h-8 w-8 ${badge.color}`} />
-                                <p className="text-sm font-medium">{badge.name}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
 
                 {/* Tabs */}
                 <div className="overflow-hidden rounded-3xl border bg-white">
@@ -479,23 +472,9 @@ export default function PosterProfile() {
                                             <Clock className="h-5 w-5 text-blue-500" />
                                             <p className="text-sm text-slate-500">Response</p>
                                         </div>
-                                        <p className="text-2xl font-bold">~2h</p>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h3 className="mb-4 text-lg font-semibold">Hiring Preferences</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {["Home Services", "Technology", "Creative Services", "Digital Services"].map(
-                                            (category) => (
-                                                <span
-                                                    key={category}
-                                                    className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600"
-                                                >
-                                                    {category}
-                                                </span>
-                                            )
-                                        )}
+                                        <p className="text-2xl font-bold">
+                                            {formatResponseTime(stats?.avg_response_minutes)}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -519,14 +498,6 @@ export default function PosterProfile() {
                                         <div className="mb-2 flex items-center justify-between">
                                             <span className="text-sm text-slate-500">Avg. Response Time</span>
                                             <span className="text-sm font-medium">Within 2 hours</span>
-                                        </div>
-
-                                        <div className="mb-2 flex items-center justify-between">
-                                            <span className="text-sm text-slate-500">Payment Method</span>
-                                            <span className="flex items-center gap-1 text-sm font-medium text-emerald-600">
-                                                <CheckCircle2 className="h-3 w-3" />
-                                                Verified
-                                            </span>
                                         </div>
 
                                         <div className="flex items-center justify-between">

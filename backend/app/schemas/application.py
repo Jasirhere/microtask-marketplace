@@ -19,3 +19,4 @@ class JobApplicationPublic(BaseModel):
     cover_letter: Optional[str] = None
     status: ApplicationStatus
     created_at: datetime
+    selected_at: datetime | None = None

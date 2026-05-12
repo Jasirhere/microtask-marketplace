@@ -162,6 +162,14 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/posters/:userId"
+        element={
+          <ProtectedRoute>
+            <PosterProfile />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="*" element={<div className="p-6">404</div>} />
     </Routes>

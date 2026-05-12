@@ -8,7 +8,7 @@ import JobStatusBadge from "../components/JobStatusBadge";
 import Modal from "../components/Modal";
 import CreateJobForm from "../components/CreateJobForm";
 import ApplicantsModal from "../components/ApplicantsModal";
-
+import AssignedJobCompletionActions from "../components/AssignedJobCompletionActions";
 function formatTimeAgo(dateString) {
   if (!dateString) return "Not set";
 
@@ -57,10 +57,10 @@ function durationLabel(job) {
 function hasAssignedWorker(job) {
   return Boolean(
     job.selected_worker_user_id ||
-      job.selected_worker_name ||
-      job.status === "ASSIGNED" ||
-      job.status === "IN_PROGRESS" ||
-      job.status === "COMPLETED"
+    job.selected_worker_name ||
+    job.status === "ASSIGNED" ||
+    job.status === "IN_PROGRESS" ||
+    job.status === "COMPLETED"
   );
 }
 
@@ -258,23 +258,20 @@ export default function PosterJobDetail() {
                 </div>
 
                 <div className="flex shrink-0 flex-wrap gap-3">
-                  <button
-                    onClick={() => navigate(`/chat?jobId=${job.id}`)}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                  >
-                    Message Worker
-                  </button>
-
-                  {!jobCompleted && (
+                  {!jobCompleted ? (
+                    <AssignedJobCompletionActions
+                      jobId={job.id}
+                      currentSide="poster"
+                      revieweeUserId={job.selected_worker_user_id}
+                      revieweeName={job.selected_worker_name || "Worker"}
+                      openChat={() => navigate(`/chat?jobId=${job.id}`)}
+                    />
+                  ) : (
                     <button
-                      onClick={() =>
-                        alert(
-                          "Mark as completed is already handled in your completion flow. We can wire this button to that endpoint next."
-                        )
-                      }
-                      className="rounded-lg border border-green-500 px-4 py-2 text-sm font-semibold text-green-600 hover:bg-green-50"
+                      onClick={() => navigate(`/chat?jobId=${job.id}`)}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                     >
-                      Mark as Completed
+                      Message Worker
                     </button>
                   )}
                 </div>
@@ -325,7 +322,7 @@ export default function PosterJobDetail() {
             <h2 className="text-xl font-bold text-slate-950">Skills Required</h2>
 
             {Array.isArray(job.skills_required) &&
-            job.skills_required.length > 0 ? (
+              job.skills_required.length > 0 ? (
               <div className="mt-4 flex flex-wrap gap-2">
                 {job.skills_required.map((skill) => (
                   <span
@@ -364,9 +361,8 @@ export default function PosterJobDetail() {
                     key={star}
                     type="button"
                     onClick={() => setRating(star)}
-                    className={`text-2xl transition-colors ${
-                      rating >= star ? "text-yellow-500" : "text-gray-300"
-                    }`}
+                    className={`text-2xl transition-colors ${rating >= star ? "text-yellow-500" : "text-gray-300"
+                      }`}
                   >
                     ★
                   </button>

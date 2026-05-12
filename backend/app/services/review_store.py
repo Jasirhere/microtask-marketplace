@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from app.schemas.review import ReviewCreate, ReviewPublic
 from app.services.job_store import _jobs
+from app.services.application_store import get_selected_applications_for_poster_jobs
 # Temporary storage
 _reviews: List[ReviewPublic] = []
 
@@ -75,12 +76,28 @@ def calculate_user_stats(user_id: str, role: str):
     if jobs:
         success_rate = (len(completed_jobs) / len(jobs)) * 100
 
+    avg_response_minutes = None
+
+    if role == "poster":
+        selected_apps = get_selected_applications_for_poster_jobs(user_id, jobs)
+
+        response_minutes = []
+
+        for app in selected_apps:
+            if app.created_at and app.selected_at:
+                diff = app.selected_at - app.created_at
+                response_minutes.append(diff.total_seconds() / 60)
+
+        if response_minutes:
+            avg_response_minutes = sum(response_minutes) / len(response_minutes)
+
     return {
         "rating": round(rating, 1),
         "total_reviews": len(reviews),
         "jobs": len(completed_jobs),
         "success_rate": int(success_rate),
-    }    
+        "avg_response_minutes": avg_response_minutes,
+    }
 
 def get_user_review_summary(user_id: str, role: str):
     reviews = [
@@ -99,4 +116,4 @@ def get_user_review_summary(user_id: str, role: str):
     return {
         "average_rating": round(average_rating, 1),
         "reviews_count": len(reviews),
-    }    
+    }

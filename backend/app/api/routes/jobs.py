@@ -1,8 +1,7 @@
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.deps import get_current_user
-from app.schemas.job import JobCreate, JobPublic, CATEGORY_OPTIONS
+from app.schemas.job import JobCreate, JobPublic
 from app.services.job_store import (
     create_job,
     get_jobs_by_poster,
@@ -16,14 +15,8 @@ from app.services.application_store import (
     get_selected_application_for_worker_and_job,
 )
 from app.services.user_store import get_by_id
-from app.schemas import job
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
-
-
-@router.get("/categories", response_model=List[str])
-def get_job_categories():
-    return CATEGORY_OPTIONS
 
 
 @router.post("", response_model=JobPublic, status_code=status.HTTP_201_CREATED)
@@ -43,17 +36,11 @@ def create_new_job(
             detail="budget_max must be greater than or equal to budget_min",
         )
 
-    if body.category not in CATEGORY_OPTIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid category selected",
-        )
-
     job = create_job(body, current_user.id)
     return job
 
 
-@router.get("/mine", response_model=List[JobPublic])
+@router.get("/mine", response_model=list[JobPublic])
 def get_my_posted_jobs(current_user=Depends(get_current_user)):
     if current_user.poster_profile is None:
         raise HTTPException(
@@ -64,7 +51,7 @@ def get_my_posted_jobs(current_user=Depends(get_current_user)):
     return get_jobs_by_poster(current_user.id)
 
 
-@router.get("/open", response_model=List[JobPublic])
+@router.get("/open", response_model=list[JobPublic])
 def get_open_jobs_feed(
     search: str | None = None,
     category: str | None = None,
@@ -126,6 +113,7 @@ def get_worker_assigned_job(job_id: str, current_user=Depends(get_current_user))
         )
 
     job = get_job_by_id(job_id)
+
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -133,7 +121,8 @@ def get_worker_assigned_job(job_id: str, current_user=Depends(get_current_user))
         )
 
     selected_application = get_selected_application_for_worker_and_job(
-        current_user.id, job_id
+        current_user.id,
+        job_id,
     )
 
     if not selected_application:
@@ -165,6 +154,7 @@ def get_job_detail(job_id: str, current_user=Depends(get_current_user)):
         )
 
     job = get_job_by_id(job_id)
+
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -180,6 +170,7 @@ def get_job_detail(job_id: str, current_user=Depends(get_current_user)):
     job_data = job.dict()
 
     selected_application = get_selected_application_for_job(job.id)
+
     if selected_application:
         selected_worker = get_by_id(selected_application.worker_user_id)
 
@@ -197,12 +188,15 @@ def get_job_detail(job_id: str, current_user=Depends(get_current_user)):
         job_data["selected_worker_bio"] = (
             selected_worker.worker_profile.bio
             if selected_worker and selected_worker.worker_profile
-            else "Experienced professional ready to complete this job."
+            else "Worker selected for this job."
         )
-        job_data["selected_worker_joined_text"] = "January 2023"
-        job_data["selected_worker_completed_jobs_count"] = 156
-        job_data["selected_worker_rating"] = 4.8
-        job_data["selected_worker_reviews_count"] = 127
+
+        # Keep these as None unless you have real data.
+        # Do not fake ratings/reviews/completed jobs.
+        job_data["selected_worker_joined_text"] = None
+        job_data["selected_worker_completed_jobs_count"] = None
+        job_data["selected_worker_rating"] = None
+        job_data["selected_worker_reviews_count"] = None
     else:
         job_data["selected_worker_user_id"] = None
         job_data["selected_worker_name"] = None
@@ -229,6 +223,7 @@ def update_job(
         )
 
     job = get_job_by_id(job_id)
+
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -245,12 +240,6 @@ def update_job(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="budget_max must be greater than or equal to budget_min",
-        )
-
-    if body.category not in CATEGORY_OPTIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid category selected",
         )
 
     job.title = body.title

@@ -13,27 +13,35 @@ export function ChatProvider({ children }) {
   const socketRef = useRef(null);
   const hasConnectedRef = useRef(false);
 
-  const loadChats = useCallback(async () => {
-    if (!user?.id) {
-      setChats([]);
-      return;
-    }
+  const loadChats = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!user?.id) {
+        setChats([]);
+        return;
+      }
 
-    try {
-      setLoadingChats(true);
-      const data = await getMyChats();
-      setChats(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Failed to load chats:", err);
-    } finally {
-      setLoadingChats(false);
-    }
-  }, [user?.id]);
+      try {
+        if (!silent) {
+          setLoadingChats(true);
+        }
+
+        const data = await getMyChats();
+        setChats(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load chats:", err);
+      } finally {
+        if (!silent) {
+          setLoadingChats(false);
+        }
+      }
+    },
+    [user?.id]
+  );
 
   useEffect(() => {
     if (!user?.id) return;
 
-    loadChats();
+    loadChats({ silent: true });
   }, [user?.id, loadChats]);
 
   useEffect(() => {
@@ -53,7 +61,7 @@ export function ChatProvider({ children }) {
       const data = JSON.parse(event.data);
       if (data.type === "notification_update") {
         window.dispatchEvent(new Event("notification-update"));
-        loadChats();
+        loadChats({ silent: true });
       }
     };
 
@@ -73,6 +81,11 @@ export function ChatProvider({ children }) {
     (chat) => (chat.unread_count || 0) > 0
   ).length;
 
+  const unreadMessageCount = chats.reduce(
+    (sum, chat) => sum + Number(chat.unread_count || 0),
+    0
+  );
+
   return (
     <ChatContext.Provider
       value={{
@@ -81,6 +94,7 @@ export function ChatProvider({ children }) {
         loadChats,
         loadingChats,
         unreadConversationCount,
+        unreadMessageCount,
       }}
     >
       {children}
