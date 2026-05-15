@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Bell } from "lucide-react";
 import {
   getNotifications,
   getUnreadNotificationsCount,
@@ -7,6 +8,8 @@ import {
 import { useAuth } from "../auth/AuthContext";
 
 function formatTimeAgo(dateString) {
+  if (!dateString) return "";
+
   const created = new Date(dateString);
   const now = new Date();
   const diffMs = now - created;
@@ -15,9 +18,10 @@ function formatTimeAgo(dateString) {
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+  if (minutes < 1) return "Just now";
   if (minutes < 60) return `${minutes} min ago`;
-  if (hours < 24) return `${hours} hrs ago`;
-  return `${days} days ago`;
+  if (hours < 24) return `${hours} hr${hours === 1 ? "" : "s"} ago`;
+  return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
 export default function NotificationsDropdown() {
@@ -62,7 +66,7 @@ export default function NotificationsDropdown() {
 
     try {
       const data = await getUnreadNotificationsCount(currentMode);
-      setUnreadCount(data.count || 0);
+      setUnreadCount(data?.count || 0);
     } catch (err) {
       console.error(err);
     }
@@ -73,7 +77,7 @@ export default function NotificationsDropdown() {
 
     try {
       const items = await getNotifications(currentMode);
-      setNotifications(items);
+      setNotifications(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error(err);
     }
@@ -83,7 +87,7 @@ export default function NotificationsDropdown() {
     const nextOpen = !open;
     setOpen(nextOpen);
 
-    if (!open) {
+    if (nextOpen) {
       await loadNotifications();
 
       if (unreadCount > 0 && currentMode) {
@@ -98,40 +102,79 @@ export default function NotificationsDropdown() {
   }
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative shrink-0" ref={menuRef}>
       <button
         onClick={handleToggle}
-        className="relative flex h-11 w-11 items-center justify-center rounded-full border bg-white hover:bg-slate-50"
+        className="relative flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white transition hover:bg-slate-50"
+        type="button"
+        title="Notifications"
       >
-        <span className="text-lg">🔔</span>
+        <Bell className="h-5 w-5 text-slate-700" />
 
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white">
-            {unreadCount}
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white shadow">
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-3 w-96 rounded-2xl border bg-white shadow-xl">
-          <div className="border-b px-4 py-3">
-            <h3 className="text-lg font-semibold text-slate-900">
+        <div className="absolute right-0 z-50 mt-3 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl sm:w-96">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+            <h3 className="truncate text-base font-semibold text-slate-900 sm:text-lg">
               Notifications
             </h3>
+
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            >
+              Close
+            </button>
           </div>
 
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-5 text-sm text-slate-500">No notifications</div>
+              <div className="p-5 text-sm text-slate-500">
+                No notifications
+              </div>
             ) : (
               notifications.map((item) => (
-                <div key={item.id} className="border-b px-4 py-4 last:border-b-0">
-                  <p className="font-medium text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-sm text-slate-600">{item.message}</p>
-                  <p className="mt-2 text-xs text-slate-400">
-                    {formatTimeAgo(item.created_at)}
-                  </p>
-                </div>
+                <article
+                  key={item.id}
+                  className="border-b border-slate-100 px-4 py-4 last:border-b-0"
+                >
+                  <div className="flex min-w-0 items-start gap-3">
+                    {item.actor_photo_data_url ? (
+                      <img
+                        src={item.actor_photo_data_url}
+                        alt={item.actor_name || "User"}
+                        className="h-10 w-10 shrink-0 rounded-full border object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-slate-100 text-sm font-semibold text-slate-700">
+                        {(item.actor_name || item.title || "N")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <p className="break-words text-sm font-semibold text-slate-900">
+                        {item.title || "Notification"}
+                      </p>
+
+                      <p className="mt-1 break-words text-sm leading-6 text-slate-600">
+                        {item.message || "You have a new notification."}
+                      </p>
+
+                      <p className="mt-2 text-xs text-slate-400">
+                        {formatTimeAgo(item.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                </article>
               ))
             )}
           </div>

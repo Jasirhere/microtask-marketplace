@@ -1,89 +1,77 @@
-import { useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
-
-import { WORKER_SKILL_OPTIONS } from "../data/skills";
+const SKILL_OPTIONS = [
+  "Cleaning",
+  "Moving",
+  "Delivery",
+  "Furniture Assembly",
+  "Handyman",
+  "Gardening",
+  "Painting",
+  "Electrical",
+  "Plumbing",
+  "Car Wash",
+  "Pet Care",
+  "Tutoring",
+  "Event Help",
+  "Shopping Help",
+  "Other",
+];
 
 export default function SkillsMultiSelect({
   value = [],
   onChange,
   error,
-  label = "Skills",
-  maxSelected = 12,
+  label = "Skills Required",
+  maxSelected = 5,
 }) {
-  const [search, setSearch] = useState("");
+  const selectedValues = Array.isArray(value) ? value : [];
 
-  const selectedSkills = Array.isArray(value) ? value : [];
-
-  const filteredGroups = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-
-    if (!keyword) return WORKER_SKILL_OPTIONS;
-
-    return WORKER_SKILL_OPTIONS.map((group) => ({
-      ...group,
-      skills: group.skills.filter((skill) =>
-        skill.toLowerCase().includes(keyword)
-      ),
-    })).filter((group) => group.skills.length > 0);
-  }, [search]);
-
-  function toggleSkill(skill) {
-    const alreadySelected = selectedSkills.includes(skill);
+  function handleToggle(skill) {
+    const alreadySelected = selectedValues.includes(skill);
 
     if (alreadySelected) {
-      onChange(selectedSkills.filter((item) => item !== skill));
+      onChange(selectedValues.filter((item) => item !== skill));
       return;
     }
 
-    if (selectedSkills.length >= maxSelected) {
-      alert(`You can select up to ${maxSelected} skills.`);
+    if (selectedValues.length >= maxSelected) {
       return;
     }
 
-    onChange([...selectedSkills, skill]);
+    onChange([...selectedValues, skill]);
   }
 
-  function removeSkill(skill) {
-    onChange(selectedSkills.filter((item) => item !== skill));
-  }
-
-  function clearAll() {
-    onChange([]);
+  function handleRemove(skill) {
+    onChange(selectedValues.filter((item) => item !== skill));
   }
 
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <label className="block text-sm font-medium text-slate-700">
-          {label} <span className="text-red-500">*</span>
+    <div className="min-w-0">
+      <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <label className="text-sm font-semibold text-slate-700">
+          {label} *
         </label>
 
-        {selectedSkills.length > 0 && (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="text-xs font-semibold text-slate-500 hover:text-red-600"
-          >
-            Clear all
-          </button>
-        )}
+        <span className="text-xs text-slate-500">
+          {selectedValues.length}/{maxSelected} selected
+        </span>
       </div>
 
-      {selectedSkills.length > 0 && (
+      {selectedValues.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-2">
-          {selectedSkills.map((skill) => (
+          {selectedValues.map((skill) => (
             <span
               key={skill}
-              className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 ring-1 ring-blue-100"
+              className="inline-flex max-w-full items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700"
             >
-              {skill}
+              <span className="min-w-0 break-words">{skill}</span>
 
               <button
                 type="button"
-                onClick={() => removeSkill(skill)}
-                className="text-blue-500 hover:text-blue-800"
+                onClick={() => handleRemove(skill)}
+                className="shrink-0 rounded-full text-blue-500 hover:text-blue-800"
+                aria-label={`Remove ${skill}`}
               >
-                <X className="h-3 w-3" />
+                ×
               </button>
             </span>
           ))}
@@ -91,70 +79,44 @@ export default function SkillsMultiSelect({
       )}
 
       <div
-        className={`rounded-2xl border bg-white p-4 ${
-          error ? "border-red-400" : "border-slate-200"
+        className={`rounded-xl border bg-white p-3 ${
+          error ? "border-red-500 bg-red-50" : "border-slate-300"
         }`}
       >
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {SKILL_OPTIONS.map((skill) => {
+            const isSelected = selectedValues.includes(skill);
+            const isDisabled =
+              !isSelected && selectedValues.length >= maxSelected;
 
-          <input
-            type="text"
-            placeholder="Search skills e.g. cleaning, cooking, moving..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 py-2 pl-10 pr-3 text-sm outline-none focus:border-blue-400"
-          />
+            return (
+              <button
+                key={skill}
+                type="button"
+                onClick={() => handleToggle(skill)}
+                disabled={isDisabled}
+                className={`min-w-0 rounded-xl border px-3 py-2 text-left text-sm font-medium transition ${
+                  isSelected
+                    ? "border-blue-600 bg-blue-600 text-white"
+                    : isDisabled
+                    ? "border-slate-200 bg-slate-100 text-slate-400"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50"
+                }`}
+              >
+                <span className="block break-words">{skill}</span>
+              </button>
+            );
+          })}
         </div>
-
-        <div className="max-h-80 space-y-5 overflow-y-auto pr-1">
-          {filteredGroups.length === 0 ? (
-            <p className="text-sm text-slate-500">No matching skills found.</p>
-          ) : (
-            filteredGroups.map((group) => (
-              <div key={group.group}>
-                <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                  {group.group}
-                </h3>
-
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {group.skills.map((skill) => (
-                    <label
-                      key={skill}
-                      className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
-                        selectedSkills.includes(skill)
-                          ? "border-blue-300 bg-blue-50 text-blue-700"
-                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedSkills.includes(skill)}
-                        onChange={() => toggleSkill(skill)}
-                        className="h-4 w-4 rounded"
-                      />
-
-                      <span>{skill}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">
-          Select up to {maxSelected} skills relevant to the work you can do.
-        </p>
-
-        <p className="text-xs font-medium text-slate-500">
-          {selectedSkills.length}/{maxSelected}
-        </p>
       </div>
 
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+
+      {!error && (
+        <p className="mt-1 text-xs text-slate-500">
+          Select the work types most relevant to this job.
+        </p>
+      )}
     </div>
   );
 }

@@ -1,36 +1,24 @@
-import { useEffect, useState } from "react";
-
-const LABELS = {
-  1: "Poor",
-  2: "Fair",
-  3: "Good",
-  4: "Very Good",
-  5: "Excellent",
-};
+import { useState } from "react";
+import Modal from "./Modal";
 
 export default function LeaveReviewModal({
   isOpen,
   onClose,
   onSubmit,
-  targetName,
+  targetName = "the other party",
   loading = false,
   reviewSubmitted = false,
 }) {
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState("");
 
-  // Reset form when modal closes or opens
-  useEffect(() => {
-    if (!isOpen && !reviewSubmitted) {
-      setRating(0);
-      setFeedback("");
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!rating) {
+      alert("Please select a rating before submitting your review.");
+      return;
     }
-  }, [isOpen, reviewSubmitted]);
-
-  if (!isOpen) return null;
-
-  function handleSubmit() {
-    if (!rating || !feedback.trim()) return;
 
     onSubmit({
       rating,
@@ -38,106 +26,112 @@ export default function LeaveReviewModal({
     });
   }
 
-  // Show success message
-  if (reviewSubmitted) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-        <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-          <div className="text-center">
-            <div className="mb-4 text-6xl">✓</div>
-            <h2 className="text-3xl font-semibold text-slate-900">
-              Review Submitted!
-            </h2>
-            <p className="mt-4 text-lg text-slate-600">
-              Thank you for sharing your feedback about {targetName}
-            </p>
-            <button
-              onClick={onClose}
-              className="mt-6 rounded-xl bg-blue-600 px-6 py-3 text-lg font-semibold text-white hover:bg-blue-700"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  function handleClose() {
+    setRating(0);
+    setFeedback("");
+    onClose();
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-3xl font-semibold text-slate-900">
-              Leave a Review
-            </h2>
-            <p className="mt-2 text-lg text-slate-500">
-              Share your experience working with {targetName}
+    <Modal isOpen={isOpen} onClose={handleClose} title="Leave a Review">
+      {reviewSubmitted ? (
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-green-200 bg-green-50 p-5 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-2xl font-bold text-white">
+              ✓
+            </div>
+
+            <h3 className="mt-4 break-words text-lg font-bold text-slate-900">
+              Review submitted
+            </h3>
+
+            <p className="mt-2 break-words text-sm leading-6 text-slate-700">
+              Your review has been saved.
             </p>
           </div>
 
           <button
-            onClick={onClose}
-            className="text-2xl text-slate-400 hover:text-slate-600"
             type="button"
+            onClick={handleClose}
+            className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
           >
-            ×
+            Close
           </button>
         </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+            <p className="text-sm font-medium text-slate-500">
+              You are reviewing
+            </p>
 
-        <div className="mt-8">
-          <p className="mb-3 text-xl font-medium text-slate-900">Rating</p>
-
-          <div className="flex items-center gap-3">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => setRating(star)}
-                className={`text-5xl ${
-                  star <= rating ? "text-yellow-400" : "text-slate-300"
-                }`}
-              >
-                ★
-              </button>
-            ))}
-
-            <span className="ml-3 text-xl text-slate-600">
-              {rating ? LABELS[rating] : ""}
-            </span>
+            <h3 className="mt-1 break-words text-base font-bold text-slate-900 sm:text-lg">
+              {targetName}
+            </h3>
           </div>
-        </div>
 
-        <div className="mt-8">
-          <p className="mb-3 text-xl font-medium text-slate-900">Feedback</p>
-          <textarea
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            placeholder="Share your experience..."
-            className="h-40 w-full rounded-2xl border bg-slate-50 px-4 py-3 text-lg outline-none focus:border-blue-500"
-          />
-        </div>
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">
+              Rating *
+            </label>
 
-        <div className="mt-8 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="rounded-xl border px-5 py-3 text-lg font-medium text-slate-700 hover:bg-slate-50"
-            disabled={loading}
-            type="button"
-          >
-            Cancel
-          </button>
+            <div className="flex flex-wrap gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating(star)}
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl border text-2xl transition ${
+                    rating >= star
+                      ? "border-yellow-400 bg-yellow-50 text-yellow-500"
+                      : "border-slate-200 bg-white text-slate-300 hover:bg-slate-50"
+                  }`}
+                  aria-label={`Rate ${star} star${star === 1 ? "" : "s"}`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
 
-          <button
-            onClick={handleSubmit}
-            disabled={loading || !rating || !feedback.trim()}
-            className="rounded-xl bg-blue-600 px-5 py-3 text-lg font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-            type="button"
-          >
-            {loading ? "Submitting..." : "Submit Review"}
-          </button>
-        </div>
-      </div>
-    </div>
+            <p className="mt-2 text-xs text-slate-500">
+              Select 1 to 5 stars.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-semibold text-slate-700">
+              Feedback
+            </label>
+
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              rows={5}
+              className="w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+              placeholder="Write a short review..."
+            />
+          </div>
+
+          <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={loading}
+              className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 sm:w-auto"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading || rating === 0}
+              className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 sm:w-auto"
+            >
+              {loading ? "Submitting..." : "Submit Review"}
+            </button>
+          </div>
+        </form>
+      )}
+    </Modal>
   );
 }

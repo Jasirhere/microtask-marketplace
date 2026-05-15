@@ -18,7 +18,7 @@ function formatTimeAgo(dateString) {
   return `${days}d ago`;
 }
 
-export default function ChatSidebar({ chats, selectedJobId, onSelectChat }) {
+export default function ChatSidebar({ chats = [], selectedJobId, onSelectChat }) {
   const [search, setSearch] = useState("");
 
   const filteredChats = useMemo(() => {
@@ -36,9 +36,11 @@ export default function ChatSidebar({ chats, selectedJobId, onSelectChat }) {
   }, [chats, search]);
 
   return (
-    <aside className="flex h-full w-full flex-col border-r border-slate-200 bg-white">
-      <div className="border-b border-slate-100 p-5">
-        <h2 className="mb-4 text-2xl font-bold text-slate-900">Messages</h2>
+    <aside className="flex h-full min-h-0 w-full flex-col border-r border-slate-200 bg-white">
+      <div className="shrink-0 border-b border-slate-100 p-4 sm:p-5">
+        <h2 className="mb-4 text-xl font-bold text-slate-900 sm:text-2xl">
+          Messages
+        </h2>
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -53,7 +55,7 @@ export default function ChatSidebar({ chats, selectedJobId, onSelectChat }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {filteredChats.length === 0 ? (
           <div className="p-5 text-sm text-slate-500">
             No conversations found.
@@ -68,7 +70,7 @@ export default function ChatSidebar({ chats, selectedJobId, onSelectChat }) {
                 key={chat.job_id}
                 type="button"
                 onClick={() => onSelectChat(chat)}
-                className={`flex w-full items-start gap-3 border-b border-slate-100 px-4 py-4 text-left transition ${
+                className={`flex w-full min-w-0 items-start gap-3 border-b border-slate-100 px-4 py-4 text-left transition ${
                   selected ? "bg-blue-50" : "bg-white hover:bg-slate-50"
                 }`}
               >
@@ -76,11 +78,11 @@ export default function ChatSidebar({ chats, selectedJobId, onSelectChat }) {
                   {chat.other_user_photo_data_url ? (
                     <img
                       src={chat.other_user_photo_data_url}
-                      alt={chat.other_user_name}
-                      className="h-12 w-12 rounded-full object-cover"
+                      alt={chat.other_user_name || "User"}
+                      className="h-11 w-11 rounded-full object-cover sm:h-12 sm:w-12"
                     />
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 sm:h-12 sm:w-12">
                       {chat.other_user_name?.[0]?.toUpperCase() || "U"}
                     </div>
                   )}
@@ -93,9 +95,9 @@ export default function ChatSidebar({ chats, selectedJobId, onSelectChat }) {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center justify-between gap-3">
-                    <p className="truncate text-sm font-bold text-slate-900">
-                      {chat.other_user_name}
+                  <div className="mb-1 flex min-w-0 items-center justify-between gap-3">
+                    <p className="min-w-0 truncate text-sm font-bold text-slate-900">
+                      {chat.other_user_name || "User"}
                     </p>
 
                     <span className="shrink-0 text-xs text-slate-400">
@@ -104,12 +106,12 @@ export default function ChatSidebar({ chats, selectedJobId, onSelectChat }) {
                   </div>
 
                   <p className="truncate text-xs text-slate-500">
-                    {chat.job_title}
+                    {chat.job_title || "Conversation"}
                   </p>
 
-                  <div className="mt-1 flex items-center justify-between gap-3">
+                  <div className="mt-1 flex min-w-0 items-center justify-between gap-3">
                     <p
-                      className={`truncate text-sm ${
+                      className={`min-w-0 truncate text-sm ${
                         unreadCount > 0
                           ? "font-semibold text-slate-900"
                           : "text-slate-500"
@@ -119,7 +121,7 @@ export default function ChatSidebar({ chats, selectedJobId, onSelectChat }) {
                     </p>
 
                     {unreadCount > 0 && (
-                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-bold text-white">
+                      <span className="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-bold text-white">
                         {unreadCount > 9 ? "9+" : unreadCount}
                       </span>
                     )}

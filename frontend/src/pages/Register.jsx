@@ -3,14 +3,7 @@ import { register } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  Hammer,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { ArrowLeft, Hammer, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -44,14 +37,13 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Blobs */}
-      <div className="absolute inset-0 overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <motion.div
-          className="absolute top-20 left-10 w-72 h-72 bg-indigo-200 rounded-full mix-blend-multiply blur-xl opacity-70"
+          className="absolute left-[-80px] top-20 h-64 w-64 rounded-full bg-indigo-200 opacity-60 blur-3xl sm:left-10 sm:h-72 sm:w-72"
           animate={{
-            x: [0, 100, 0],
-            y: [0, -50, 0],
+            x: [0, 80, 0],
+            y: [0, -40, 0],
           }}
           transition={{
             duration: 20,
@@ -59,11 +51,12 @@ export default function Register() {
             ease: "easeInOut",
           }}
         />
+
         <motion.div
-          className="absolute bottom-20 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply blur-xl opacity-70"
+          className="absolute bottom-20 right-[-80px] h-64 w-64 rounded-full bg-purple-200 opacity-60 blur-3xl sm:right-10 sm:h-72 sm:w-72"
           animate={{
-            x: [0, -100, 0],
-            y: [0, 50, 0],
+            x: [0, -80, 0],
+            y: [0, 40, 0],
           }}
           transition={{
             duration: 15,
@@ -73,50 +66,48 @@ export default function Register() {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* Back to Home */}
+      <main className="relative z-10 mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-md flex-col justify-center sm:min-h-[calc(100vh-5rem)]">
         <button
           onClick={() => navigate("/")}
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-indigo-600 mb-8 transition-colors"
+          className="mb-5 inline-flex w-fit items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-indigo-600 sm:mb-8"
           type="button"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="h-4 w-4" />
           Back to home
         </button>
 
-        <motion.div
+        <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-10"
+          className="rounded-3xl bg-white/85 p-5 shadow-2xl backdrop-blur-sm sm:p-8 md:p-10"
         >
-          {/* Logo */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <Hammer className="w-7 h-7 text-white" />
+          <div className="mb-7 flex items-center justify-center gap-2 sm:mb-8">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 sm:h-12 sm:w-12">
+              <Hammer className="h-6 w-6 text-white sm:h-7 sm:w-7" />
             </div>
-            <span className="text-3xl font-semibold text-slate-900">
+
+            <span className="break-words text-2xl font-semibold text-slate-900 sm:text-3xl">
               WorkHub
             </span>
           </div>
 
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2 text-slate-900">
+          <div className="mb-7 text-center sm:mb-8">
+            <h1 className="break-words text-2xl font-bold text-slate-900 sm:text-3xl">
               Create Account
             </h1>
-            <p className="text-gray-600">
+
+            <p className="mt-2 break-words text-sm leading-6 text-slate-600 sm:text-base">
               Create your account to get started
             </p>
           </div>
 
-          {/* Google button placeholder */}
           <button
             type="button"
             onClick={handleGoogleSignUp}
-            className="w-full flex items-center justify-center gap-3 px-6 py-3.5 border-2 border-gray-300 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-all mb-6"
+            className="mb-5 flex w-full items-center justify-center gap-3 rounded-xl border-2 border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition-all hover:border-slate-400 hover:bg-slate-50 sm:px-6 sm:py-3.5"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -134,42 +125,45 @@ export default function Register() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span>Continue with Google</span>
+
+            <span className="min-w-0 break-words">Continue with Google</span>
           </button>
 
-          {/* Divider */}
-          <div className="relative mb-6">
+          <div className="relative mb-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="w-full border-t border-slate-300" />
             </div>
+
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">
+              <span className="bg-white px-4 text-slate-500">
                 Or sign up with email
               </span>
             </div>
           </div>
 
-          {/* Error */}
           {error && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="mb-4 break-words rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {error}
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={onSubmit} className="space-y-5">
-            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm mb-2 text-gray-700">
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
                 Email Address
               </label>
+
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+
                 <input
                   id="email"
                   type="email"
                   placeholder="you@example.com"
-                  className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="w-full rounded-xl border-2 border-slate-300 py-3.5 pl-12 pr-4 text-sm outline-none transition-colors focus:border-indigo-500"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -177,45 +171,50 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm mb-2 text-gray-700">
+              <label
+                htmlFor="password"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
                 Password
               </label>
+
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
-                  className="w-full pl-12 pr-12 py-3.5 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="w-full rounded-xl border-2 border-slate-300 py-3.5 pl-12 pr-12 text-sm outline-none transition-colors focus:border-indigo-500"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   minLength={8}
                   required
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="w-5 h-5" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
             </div>
 
-            {/* Terms */}
-            <label className="flex items-start gap-2 cursor-pointer">
+            <label className="flex cursor-pointer items-start gap-2">
               <input
                 type="checkbox"
-                className="w-4 h-4 mt-1 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                 required
               />
-              <span className="text-sm text-gray-600">
+
+              <span className="break-words text-sm leading-6 text-slate-600">
                 By creating an account, you agree to our{" "}
                 <a href="#" className="text-indigo-600 hover:text-indigo-700">
                   Terms of Service
@@ -227,25 +226,26 @@ export default function Register() {
               </span>
             </label>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-60"
+              className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 py-3.5 text-sm font-semibold text-white transition-all hover:shadow-lg disabled:opacity-60"
             >
               {loading ? "Creating account..." : "Create Account"}
             </button>
           </form>
 
-          {/* Bottom link */}
-          <p className="text-center mt-6 text-gray-600">
+          <p className="mt-6 break-words text-center text-sm text-slate-600 sm:text-base">
             Already have an account?{" "}
-            <Link to="/login" className="text-indigo-600 hover:text-indigo-700">
+            <Link
+              to="/login"
+              className="font-medium text-indigo-600 hover:text-indigo-700"
+            >
               Sign in
             </Link>
           </p>
-        </motion.div>
-      </div>
+        </motion.section>
+      </main>
     </div>
   );
 }

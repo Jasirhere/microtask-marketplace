@@ -1,32 +1,36 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Briefcase, Hammer } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function CTA() {
   return (
-    <section id="cta" className="py-24 bg-white px-6">
-      <div className="max-w-6xl mx-auto rounded-3xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-10 md:p-14 text-center shadow-xl">
-        <h2 className="text-3xl md:text-5xl font-bold mb-4">
-          Ready to Get Started?
+    <section className="bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 px-4 py-14 text-white sm:px-6 sm:py-18 lg:px-8 lg:py-24">
+      <div className="mx-auto w-full max-w-5xl text-center">
+        <h2 className="break-words text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+          Ready to get started?
         </h2>
 
-        <p className="text-white/90 text-base md:text-lg mb-8 max-w-2xl mx-auto">
-          Join the platform today and start posting jobs or finding your next opportunity.
+        <p className="mx-auto mt-4 max-w-2xl break-words text-sm leading-7 text-white/85 sm:text-base lg:text-lg">
+          Create an account, choose your mode, and start using the platform as a
+          poster or worker.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:mx-auto sm:max-w-xl sm:grid-cols-2">
           <Link
             to="/register"
-            className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-white text-indigo-700 font-medium hover:bg-gray-100 transition"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-indigo-700 shadow-lg transition hover:bg-slate-100 sm:text-base"
           >
-            Create Your Account
-            <ArrowRight className="w-4 h-4" />
+            <Hammer className="h-5 w-5 shrink-0" />
+            <span className="min-w-0 break-words">Find Work</span>
+            <ArrowRight className="h-4 w-4 shrink-0" />
           </Link>
 
           <Link
-            to="/login"
-            className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/40 text-white font-medium hover:bg-white/10 transition"
+            to="/register"
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-white/40 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10 sm:text-base"
           >
-            Sign In
+            <Briefcase className="h-5 w-5 shrink-0" />
+            <span className="min-w-0 break-words">Post a Job</span>
+            <ArrowRight className="h-4 w-4 shrink-0" />
           </Link>
         </div>
       </div>

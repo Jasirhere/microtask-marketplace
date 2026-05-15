@@ -4,6 +4,7 @@ import { createPosterProfile } from "../api/profile";
 import { useAuth } from "../auth/AuthContext";
 import LocationDropdowns from "../components/LocationDropdowns";
 import ProfilePhotoUpload from "../components/ProfilePhotoUpload";
+
 export default function PosterProfileSetup() {
   const navigate = useNavigate();
   const { reload } = useAuth();
@@ -79,46 +80,6 @@ export default function PosterProfileSetup() {
     setServerError("");
   }
 
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    const maxSize = 2 * 1024 * 1024;
-
-    if (!allowedTypes.includes(file.type)) {
-      setErrors((prev) => ({
-        ...prev,
-        photo_data_url: "Only JPG, PNG, or WEBP images are allowed",
-      }));
-      return;
-    }
-
-    if (file.size > maxSize) {
-      setErrors((prev) => ({
-        ...prev,
-        photo_data_url: "Image size must be under 2MB",
-      }));
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      setForm((prev) => ({
-        ...prev,
-        photo_data_url: reader.result,
-      }));
-
-      setErrors((prev) => ({
-        ...prev,
-        photo_data_url: "",
-      }));
-    };
-
-    reader.readAsDataURL(file);
-  }
-
   async function handleSubmit(e) {
     e.preventDefault();
     setServerError("");
@@ -153,33 +114,43 @@ export default function PosterProfileSetup() {
     return <p className="mt-1 text-sm text-red-600">{message}</p>;
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-xl">👤</span>
-          </div>
-          <h1 className="text-3xl font-semibold">Complete Your Poster Profile</h1>
-          <p className="text-gray-600">
-            Let workers know who they are working with
-          </p>
-        </div>
+  function inputClass(fieldName) {
+    return `w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 ${
+      errors[fieldName] ? "border-red-500 bg-red-50" : "border-slate-300"
+    }`;
+  }
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto w-full max-w-3xl">
+        <header className="mb-6 text-center sm:mb-8">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 sm:h-16 sm:w-16">
+            <span className="text-xl text-white">👤</span>
+          </div>
+
+          <h1 className="break-words text-2xl font-semibold text-slate-950 sm:text-3xl">
+            Complete Your Poster Profile
+          </h1>
+
+          <p className="mt-2 break-words text-sm leading-6 text-slate-600 sm:text-base">
+            Let workers know who they are working with.
+          </p>
+        </header>
+
+        <section className="rounded-2xl bg-white p-5 shadow-xl sm:p-8">
+          <form onSubmit={handleSubmit} className="space-y-7" noValidate>
             {serverError && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              <div className="break-words rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {serverError}
               </div>
             )}
 
-            <div>
-              <h2 className="text-xl font-semibold mb-4 border-b pb-2">
+            <section>
+              <h2 className="mb-4 border-b border-slate-200 pb-2 text-lg font-semibold text-slate-900 sm:text-xl">
                 Personal Information
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <ProfilePhotoUpload
                     id="poster-profile-photo"
@@ -195,33 +166,39 @@ export default function PosterProfileSetup() {
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0">
+                  <label className="mb-1 block text-sm font-semibold text-slate-700">
+                    Full name *
+                  </label>
+
                   <input
                     name="name"
-                    placeholder="Full name *"
+                    placeholder="Enter your full name"
                     value={form.name}
                     onChange={handleChange}
-                    className={`w-full border rounded-lg p-3 ${
-                      errors.name ? "border-red-500" : ""
-                    }`}
+                    className={inputClass("name")}
                   />
+
                   <FieldError message={errors.name} />
                 </div>
 
-                <div>
+                <div className="min-w-0">
+                  <label className="mb-1 block text-sm font-semibold text-slate-700">
+                    Phone number *
+                  </label>
+
                   <input
                     name="phone"
-                    placeholder="Phone number *"
+                    placeholder="Enter your phone number"
                     value={form.phone}
                     onChange={handleChange}
-                    className={`w-full border rounded-lg p-3 ${
-                      errors.phone ? "border-red-500" : ""
-                    }`}
+                    className={inputClass("phone")}
                   />
+
                   <FieldError message={errors.phone} />
                 </div>
 
-                <div className="md:col-span-2">
+                <div className="min-w-0 md:col-span-2">
                   <LocationDropdowns
                     value={form.location}
                     onChange={handleLocationChange}
@@ -230,10 +207,10 @@ export default function PosterProfileSetup() {
                   />
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div>
-              <h2 className="text-xl font-semibold mb-4 border-b pb-2">
+            <section>
+              <h2 className="mb-4 border-b border-slate-200 pb-2 text-lg font-semibold text-slate-900 sm:text-xl">
                 About You
               </h2>
 
@@ -242,23 +219,24 @@ export default function PosterProfileSetup() {
                 placeholder="Short bio"
                 value={form.bio}
                 onChange={handleChange}
-                className={`w-full border rounded-lg p-3 ${
-                  errors.bio ? "border-red-500" : ""
-                }`}
+                className={`${inputClass("bio")} resize-y`}
                 rows={4}
               />
 
-              <div className="mt-1 flex justify-between text-sm">
+              <div className="mt-1 flex items-start justify-between gap-3 text-sm">
                 <FieldError message={errors.bio} />
-                <span className="text-gray-400">{form.bio.length}/500</span>
-              </div>
-            </div>
 
-            <div className="flex gap-4 pt-4">
+                <span className="shrink-0 text-slate-400">
+                  {form.bio.length}/500
+                </span>
+              </div>
+            </section>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row">
               <button
                 type="button"
                 onClick={() => navigate("/select-mode")}
-                className="flex-1 py-3 border rounded-xl"
+                className="w-full rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:flex-1"
               >
                 Go Back
               </button>
@@ -266,14 +244,14 @@ export default function PosterProfileSetup() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl disabled:opacity-60"
+                className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-5 py-3 text-sm font-semibold text-white hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 sm:flex-1"
               >
                 {loading ? "Saving..." : "Save Poster Profile"}
               </button>
             </div>
           </form>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }

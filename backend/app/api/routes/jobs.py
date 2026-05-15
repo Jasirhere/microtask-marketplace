@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_db
 from app.schemas.job import JobCreate, JobPublic
 from app.services.job_store import (
     create_job,
@@ -8,6 +9,7 @@ from app.services.job_store import (
     get_job_by_id,
     delete_job,
     get_open_jobs,
+    update_job as update_job_in_db,
 )
 from app.services.application_store import (
     get_applied_job_ids_for_worker,
@@ -16,6 +18,7 @@ from app.services.application_store import (
 )
 from app.services.user_store import get_by_id
 
+
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
@@ -23,6 +26,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 def create_new_job(
     body: JobCreate,
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     if current_user.poster_profile is None:
         raise HTTPException(
@@ -36,19 +40,21 @@ def create_new_job(
             detail="budget_max must be greater than or equal to budget_min",
         )
 
-    job = create_job(body, current_user.id)
-    return job
+    return create_job(db, body, current_user.id)
 
 
 @router.get("/mine", response_model=list[JobPublic])
-def get_my_posted_jobs(current_user=Depends(get_current_user)):
+def get_my_posted_jobs(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if current_user.poster_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Poster profile does not exist",
         )
 
-    return get_jobs_by_poster(current_user.id)
+    return get_jobs_by_poster(db, current_user.id)
 
 
 @router.get("/open", response_model=list[JobPublic])
@@ -57,6 +63,7 @@ def get_open_jobs_feed(
     category: str | None = None,
     city: str | None = None,
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     if current_user.worker_profile is None:
         raise HTTPException(
@@ -64,9 +71,10 @@ def get_open_jobs_feed(
             detail="Worker profile does not exist",
         )
 
-    applied_job_ids = get_applied_job_ids_for_worker(current_user.id)
+    applied_job_ids = get_applied_job_ids_for_worker(db, current_user.id)
 
     return get_open_jobs(
+        db,
         search=search,
         category=category,
         city=city,
@@ -75,8 +83,12 @@ def get_open_jobs_feed(
 
 
 @router.get("/public/{job_id}", response_model=JobPublic)
-def get_public_job(job_id: str, current_user=Depends(get_current_user)):
-    job = get_job_by_id(job_id)
+def get_public_job(
+    job_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    job = get_job_by_id(db, job_id)
 
     if not job:
         raise HTTPException(
@@ -90,9 +102,9 @@ def get_public_job(job_id: str, current_user=Depends(get_current_user)):
             detail="Job not available",
         )
 
-    poster = get_by_id(job.poster_user_id)
+    poster = get_by_id(db, job.poster_user_id)
 
-    job_data = job.dict()
+    job_data = job.model_dump()
 
     if poster and poster.poster_profile:
         job_data["poster_name"] = poster.poster_profile.name
@@ -105,14 +117,18 @@ def get_public_job(job_id: str, current_user=Depends(get_current_user)):
 
 
 @router.get("/worker/{job_id}", response_model=JobPublic)
-def get_worker_assigned_job(job_id: str, current_user=Depends(get_current_user)):
+def get_worker_assigned_job(
+    job_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if current_user.worker_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Worker profile does not exist",
         )
 
-    job = get_job_by_id(job_id)
+    job = get_job_by_id(db, job_id)
 
     if not job:
         raise HTTPException(
@@ -121,6 +137,7 @@ def get_worker_assigned_job(job_id: str, current_user=Depends(get_current_user))
         )
 
     selected_application = get_selected_application_for_worker_and_job(
+        db,
         current_user.id,
         job_id,
     )
@@ -131,9 +148,9 @@ def get_worker_assigned_job(job_id: str, current_user=Depends(get_current_user))
             detail="You are not allowed to view this assigned job",
         )
 
-    poster = get_by_id(job.poster_user_id)
+    poster = get_by_id(db, job.poster_user_id)
 
-    job_data = job.dict()
+    job_data = job.model_dump()
 
     if poster and poster.poster_profile:
         job_data["poster_name"] = poster.poster_profile.name
@@ -146,14 +163,18 @@ def get_worker_assigned_job(job_id: str, current_user=Depends(get_current_user))
 
 
 @router.get("/{job_id}", response_model=JobPublic)
-def get_job_detail(job_id: str, current_user=Depends(get_current_user)):
+def get_job_detail(
+    job_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if current_user.poster_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Poster profile does not exist",
         )
 
-    job = get_job_by_id(job_id)
+    job = get_job_by_id(db, job_id)
 
     if not job:
         raise HTTPException(
@@ -167,12 +188,12 @@ def get_job_detail(job_id: str, current_user=Depends(get_current_user)):
             detail="You are not allowed to view this job",
         )
 
-    job_data = job.dict()
+    job_data = job.model_dump()
 
-    selected_application = get_selected_application_for_job(job.id)
+    selected_application = get_selected_application_for_job(db, job.id)
 
     if selected_application:
-        selected_worker = get_by_id(selected_application.worker_user_id)
+        selected_worker = get_by_id(db, selected_application.worker_user_id)
 
         job_data["selected_worker_user_id"] = selected_application.worker_user_id
         job_data["selected_worker_name"] = (
@@ -191,8 +212,6 @@ def get_job_detail(job_id: str, current_user=Depends(get_current_user)):
             else "Worker selected for this job."
         )
 
-        # Keep these as None unless you have real data.
-        # Do not fake ratings/reviews/completed jobs.
         job_data["selected_worker_joined_text"] = None
         job_data["selected_worker_completed_jobs_count"] = None
         job_data["selected_worker_rating"] = None
@@ -215,6 +234,7 @@ def update_job(
     job_id: str,
     body: JobCreate,
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     if current_user.poster_profile is None:
         raise HTTPException(
@@ -222,7 +242,7 @@ def update_job(
             detail="Poster profile does not exist",
         )
 
-    job = get_job_by_id(job_id)
+    job = get_job_by_id(db, job_id)
 
     if not job:
         raise HTTPException(
@@ -242,37 +262,30 @@ def update_job(
             detail="budget_max must be greater than or equal to budget_min",
         )
 
-    job.title = body.title
-    job.description = body.description
-    job.category = body.category
-    job.country = body.country
-    job.state = body.state
-    job.city = body.city
-    job.area = body.area
-    job.address_details = body.address_details
-    job.latitude = body.latitude
-    job.longitude = body.longitude
-    job.budget_min = body.budget_min
-    job.budget_max = body.budget_max
-    job.deadline_value = body.deadline_value
-    job.deadline_unit = body.deadline_unit
-    job.estimated_duration_value = body.estimated_duration_value
-    job.estimated_duration_unit = body.estimated_duration_unit
-    job.skills_required = body.skills_required
-    job.notes = body.notes
+    updated_job = update_job_in_db(db, job_id, body)
 
-    return job
+    if not updated_job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
+
+    return updated_job
 
 
 @router.delete("/{job_id}")
-def delete_job_route(job_id: str, current_user=Depends(get_current_user)):
+def delete_job_route(
+    job_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if current_user.poster_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Poster profile does not exist",
         )
 
-    job = get_job_by_id(job_id)
+    job = get_job_by_id(db, job_id)
 
     if not job:
         raise HTTPException(
@@ -286,6 +299,6 @@ def delete_job_route(job_id: str, current_user=Depends(get_current_user)):
             detail="You are not allowed to delete this job",
         )
 
-    delete_job(job_id)
+    delete_job(db, job_id)
 
     return {"message": "Job deleted successfully"}

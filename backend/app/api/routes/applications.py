@@ -1,7 +1,9 @@
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.services.review_store import get_user_review_summary
-from app.api.deps import get_current_user
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user, get_db
 from app.schemas.application import JobApplicationCreate, JobApplicationPublic
 from app.schemas.poster_applications import PosterApplicantItem
 from app.schemas.worker_jobs import WorkerJobItem
@@ -12,11 +14,15 @@ from app.services.application_store import (
     get_applications_for_job,
     get_application_by_id,
     reject_other_applications,
+    select_application,
+    reject_application_by_id,
 )
-from app.services.job_store import get_job_by_id, set_job_status
-from app.services.user_store import get_by_id
+from app.services.job_store import get_job_by_id, assign_job
 from app.services.notification_store import create_notification
-from datetime import datetime, timezone
+from app.services.review_store import get_user_review_summary
+from app.services.user_store import get_by_id
+
+
 router = APIRouter(prefix="/applications", tags=["applications"])
 
 
@@ -24,6 +30,7 @@ router = APIRouter(prefix="/applications", tags=["applications"])
 async def apply_to_job(
     body: JobApplicationCreate,
     current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     if current_user.worker_profile is None:
         raise HTTPException(
@@ -31,7 +38,8 @@ async def apply_to_job(
             detail="Worker profile does not exist",
         )
 
-    job = get_job_by_id(body.job_id)
+    job = get_job_by_id(db, body.job_id)
+
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -56,20 +64,26 @@ async def apply_to_job(
             detail=f"Proposed rate must be between {job.budget_min} and {job.budget_max}",
         )
 
-    existing = get_application_by_job_and_worker(body.job_id, current_user.id)
+    existing = get_application_by_job_and_worker(
+        db,
+        body.job_id,
+        current_user.id,
+    )
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You have already applied to this job",
         )
 
-    application = create_application(body, current_user.id)
+    application = create_application(db, body, current_user.id)
 
     worker_name = (
         current_user.worker_profile.name
         if current_user.worker_profile and current_user.worker_profile.name
         else current_user.email
     )
+
     worker_photo = (
         current_user.worker_profile.photo_data_url
         if current_user.worker_profile
@@ -87,7 +101,6 @@ async def apply_to_job(
         job_title=job.title,
     )
 
-    # Live update for poster bell/chat
     try:
         from app.api.routes.chat import user_manager
 
@@ -102,33 +115,40 @@ async def apply_to_job(
 
 
 @router.get("/mine", response_model=List[JobApplicationPublic])
-def get_my_applications(current_user=Depends(get_current_user)):
+def get_my_applications(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if current_user.worker_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Worker profile does not exist",
         )
 
-    return get_applications_by_worker(current_user.id)
+    return get_applications_by_worker(db, current_user.id)
 
 
 @router.get("/my-jobs", response_model=List[WorkerJobItem])
-def get_my_jobs(current_user=Depends(get_current_user)):
+def get_my_jobs(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if current_user.worker_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Worker profile does not exist",
         )
 
-    applications = get_applications_by_worker(current_user.id)
+    applications = get_applications_by_worker(db, current_user.id)
     items: List[WorkerJobItem] = []
 
     for app in applications:
-        job = get_job_by_id(app.job_id)
+        job = get_job_by_id(db, app.job_id)
+
         if not job:
             continue
 
-        poster = get_by_id(job.poster_user_id)
+        poster = get_by_id(db, job.poster_user_id)
         poster_profile = poster.poster_profile if poster else None
 
         items.append(
@@ -138,25 +158,32 @@ def get_my_jobs(current_user=Depends(get_current_user)):
                 applied_at=app.created_at,
                 proposed_rate=app.proposed_rate,
                 cover_letter=app.cover_letter,
+
                 job_id=job.id,
                 job_title=job.title,
                 job_description=job.description,
                 job_category=job.category,
+
                 country=job.country,
                 city=job.city,
                 area=job.area,
                 address_details=job.address_details,
+
                 budget_min=job.budget_min,
                 budget_max=job.budget_max,
+
                 deadline_value=job.deadline_value,
                 deadline_unit=job.deadline_unit,
+
                 estimated_duration_value=job.estimated_duration_value,
                 estimated_duration_unit=job.estimated_duration_unit,
+
                 job_status=job.status,
                 payment_status=getattr(job, "payment_status", "UNPAID"),
                 paid_at=getattr(job, "paid_at", None),
                 final_price=getattr(job, "final_price", None),
                 created_at=job.created_at,
+
                 poster_user_id=job.poster_user_id,
                 poster_name=poster_profile.name if poster_profile else "Client",
                 poster_photo_data_url=poster_profile.photo_data_url if poster_profile else None,
@@ -167,21 +194,25 @@ def get_my_jobs(current_user=Depends(get_current_user)):
 
 
 @router.get("/job/{job_id}", response_model=List[PosterApplicantItem])
-def get_applications_for_job_route(job_id: str, current_user=Depends(get_current_user)):
+def get_applications_for_job_route(
+    job_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if current_user.poster_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Poster profile does not exist",
         )
 
-    job = get_job_by_id(job_id)
+    job = get_job_by_id(db, job_id)
+
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found",
         )
-    poster = get_by_id(job.poster_user_id)
-    poster_profile = poster.poster_profile if poster else None
+
     if job.poster_user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -190,8 +221,8 @@ def get_applications_for_job_route(job_id: str, current_user=Depends(get_current
 
     applicants: List[PosterApplicantItem] = []
 
-    for app in get_applications_for_job(job_id):
-        worker = get_by_id(app.worker_user_id)
+    for app in get_applications_for_job(db, job_id):
+        worker = get_by_id(db, app.worker_user_id)
         review_summary = get_user_review_summary(app.worker_user_id, "worker")
 
         applicants.append(
@@ -199,8 +230,16 @@ def get_applications_for_job_route(job_id: str, current_user=Depends(get_current
                 application_id=app.id,
                 job_id=app.job_id,
                 worker_user_id=app.worker_user_id,
-                worker_name=worker.worker_profile.name if worker and worker.worker_profile else "Worker",
-                worker_photo_data_url=worker.worker_profile.photo_data_url if worker and worker.worker_profile else None,
+                worker_name=(
+                    worker.worker_profile.name
+                    if worker and worker.worker_profile
+                    else "Worker"
+                ),
+                worker_photo_data_url=(
+                    worker.worker_profile.photo_data_url
+                    if worker and worker.worker_profile
+                    else None
+                ),
                 worker_average_rating=review_summary["average_rating"],
                 worker_reviews_count=review_summary["reviews_count"],
                 proposed_rate=app.proposed_rate,
@@ -209,26 +248,34 @@ def get_applications_for_job_route(job_id: str, current_user=Depends(get_current
                 applied_at=app.created_at,
             )
         )
+
     applicants.sort(key=lambda x: x.applied_at, reverse=True)
+
     return applicants
 
 
 @router.post("/{application_id}/accept")
-async def accept_application(application_id: str, current_user=Depends(get_current_user)):
+async def accept_application(
+    application_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if current_user.poster_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Poster profile does not exist",
         )
 
-    application = get_application_by_id(application_id)
+    application = get_application_by_id(db, application_id)
+
     if not application:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Application not found",
         )
 
-    job = get_job_by_id(application.job_id)
+    job = get_job_by_id(db, application.job_id)
+
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -247,18 +294,30 @@ async def accept_application(application_id: str, current_user=Depends(get_curre
             detail="Job is no longer open",
         )
 
-    application.status = "SELECTED"
-    application.selected_at = datetime.now(timezone.utc)
-    job.selected_worker_user_id = application.worker_user_id
-    job.final_price = application.proposed_rate
-    reject_other_applications(job.id, application.id)
-    set_job_status(job.id, "ASSIGNED")
+    selected_application = select_application(db, application.id)
+
+    if not selected_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
+
+    reject_other_applications(db, job.id, application.id)
+
+    updated_job = assign_job(db, job.id, application.proposed_rate)
+
+    if not updated_job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Job not found",
+        )
 
     poster_name = (
         current_user.poster_profile.name
         if current_user.poster_profile and current_user.poster_profile.name
         else current_user.email
     )
+
     poster_photo = (
         current_user.poster_profile.photo_data_url
         if current_user.poster_profile
@@ -276,7 +335,6 @@ async def accept_application(application_id: str, current_user=Depends(get_curre
         job_title=job.title,
     )
 
-    # Live update for worker + poster
     try:
         from app.api.routes.chat import user_manager
 
@@ -304,21 +362,27 @@ async def accept_application(application_id: str, current_user=Depends(get_curre
 
 
 @router.post("/{application_id}/reject")
-async def reject_application(application_id: str, current_user=Depends(get_current_user)):
+async def reject_application(
+    application_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if current_user.poster_profile is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Poster profile does not exist",
         )
 
-    application = get_application_by_id(application_id)
+    application = get_application_by_id(db, application_id)
+
     if not application:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Application not found",
         )
 
-    job = get_job_by_id(application.job_id)
+    job = get_job_by_id(db, application.job_id)
+
     if not job:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -337,13 +401,20 @@ async def reject_application(application_id: str, current_user=Depends(get_curre
             detail="Only pending applications can be rejected",
         )
 
-    application.status = "REJECTED"
+    rejected_application = reject_application_by_id(db, application.id)
+
+    if not rejected_application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
 
     poster_name = (
         current_user.poster_profile.name
         if current_user.poster_profile and current_user.poster_profile.name
         else current_user.email
     )
+
     poster_photo = (
         current_user.poster_profile.photo_data_url
         if current_user.poster_profile
@@ -376,4 +447,3 @@ async def reject_application(application_id: str, current_user=Depends(get_curre
         pass
 
     return {"message": "Applicant rejected successfully"}
-

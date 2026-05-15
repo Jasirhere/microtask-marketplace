@@ -13,11 +13,10 @@ import {
 import { getOpenJobs } from "../api/jobs";
 import { getMyApplications } from "../api/applications";
 import { LOCATION_DATA } from "../data/locations";
+import { WORKER_SKILL_OPTIONS } from "../data/skills";
 
 import DashboardHeader from "../components/DashboardHeader";
 import ApplyJobModal from "../components/ApplyJobModal";
-import { WORKER_SKILL_OPTIONS } from "../data/skills";
-
 
 function formatTimeAgo(dateString) {
   if (!dateString) return "Recently";
@@ -269,51 +268,51 @@ export default function WorkerJobsFeed() {
     <div className="min-h-screen bg-[#f3f7ff]">
       <DashboardHeader />
 
-      <main className="mx-auto max-w-7xl px-6 py-7">
-        <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-md">
+      <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-blue-600">
+            <div className="min-w-0">
+              <h1 className="break-words text-2xl font-bold text-blue-600 sm:text-3xl">
                 Find Your Next Opportunity
               </h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+
+              <p className="mt-2 max-w-3xl break-words text-sm leading-6 text-slate-600">
                 Discover jobs that match your skills, location preferences, and
-                budget expectations. Use our advanced filters to find the perfect
-                opportunity.
+                budget expectations. Use filters to find the right opportunity.
               </p>
             </div>
 
-            <div className="flex h-24 w-28 shrink-0 flex-col items-center justify-center rounded-2xl bg-indigo-100 text-blue-700">
+            <div className="flex h-auto w-full shrink-0 items-center justify-between rounded-2xl bg-indigo-100 px-5 py-4 text-blue-700 md:h-24 md:w-32 md:flex-col md:justify-center">
               <p className="text-2xl font-bold">{jobs.length}</p>
-              <p className="mt-1 text-xs text-slate-700">Jobs Available</p>
+              <p className="text-xs text-slate-700 md:mt-1">Jobs Available</p>
             </div>
           </div>
         </section>
 
         {successMessage && (
-          <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-700">
+          <div className="mt-5 break-words rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-700">
             {successMessage}
           </div>
         )}
 
         {error && (
-          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+          <div className="mt-5 break-words rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
             {error}
           </div>
         )}
 
-        <div className="mt-7 grid gap-7 lg:grid-cols-[330px_1fr]">
-          <aside className="h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
-            <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-fuchsia-600 px-5 py-4 text-white">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                <h2 className="font-semibold">Advanced Filters</h2>
+        <div className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]">
+          <aside className="h-fit overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-blue-600 to-fuchsia-600 px-5 py-4 text-white">
+              <div className="flex min-w-0 items-center gap-2">
+                <Filter className="h-4 w-4 shrink-0" />
+                <h2 className="truncate font-semibold">Advanced Filters</h2>
               </div>
 
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="flex items-center gap-1 text-xs font-semibold hover:underline"
+                className="flex shrink-0 items-center gap-1 text-xs font-semibold hover:underline"
               >
                 <X className="h-3 w-3" />
                 Clear All
@@ -336,9 +335,9 @@ export default function WorkerJobsFeed() {
                     type="checkbox"
                     checked={includeRemoteJobs}
                     onChange={(e) => setIncludeRemoteJobs(e.target.checked)}
-                    className="h-4 w-4 rounded"
+                    className="h-4 w-4 shrink-0 rounded"
                   />
-                  Include Remote Jobs
+                  <span className="break-words">Include Remote Jobs</span>
                 </label>
 
                 <div className="mt-4 space-y-4">
@@ -346,6 +345,7 @@ export default function WorkerJobsFeed() {
                     <label className="mb-1 block text-xs font-medium text-slate-600">
                       Country
                     </label>
+
                     <select
                       value={selectedCountry}
                       onChange={handleCountryChange}
@@ -364,6 +364,7 @@ export default function WorkerJobsFeed() {
                     <label className="mb-1 block text-xs font-medium text-slate-600">
                       Province / State
                     </label>
+
                     <select
                       value={selectedState}
                       onChange={handleStateChange}
@@ -375,6 +376,7 @@ export default function WorkerJobsFeed() {
                           ? "Select province / state"
                           : "Select country first"}
                       </option>
+
                       {stateOptions.map((item) => (
                         <option key={item.name} value={item.name}>
                           {item.name}
@@ -388,7 +390,7 @@ export default function WorkerJobsFeed() {
                       Cities ({selectedCities.length} selected)
                     </div>
 
-                    <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 p-3">
+                    <div className="max-h-44 overflow-y-auto rounded-lg border border-slate-200 p-3">
                       {!selectedState ? (
                         <p className="text-xs text-slate-500">
                           Select province / state first.
@@ -398,15 +400,15 @@ export default function WorkerJobsFeed() {
                           {cityOptions.map((city) => (
                             <label
                               key={city}
-                              className="flex items-center gap-2 text-sm text-slate-700"
+                              className="flex min-w-0 items-center gap-2 text-sm text-slate-700"
                             >
                               <input
                                 type="checkbox"
                                 checked={selectedCities.includes(city)}
                                 onChange={() => toggleCity(city)}
-                                className="h-4 w-4 rounded"
+                                className="h-4 w-4 shrink-0 rounded"
                               />
-                              {city}
+                              <span className="break-words">{city}</span>
                             </label>
                           ))}
                         </div>
@@ -424,7 +426,7 @@ export default function WorkerJobsFeed() {
                 <div className="max-h-80 space-y-5 overflow-y-auto pr-1">
                   {WORKER_SKILL_OPTIONS.map((group) => (
                     <div key={group.group}>
-                      <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                      <h4 className="mb-2 break-words text-xs font-bold uppercase tracking-wide text-slate-500">
                         {group.group}
                       </h4>
 
@@ -432,18 +434,19 @@ export default function WorkerJobsFeed() {
                         {group.skills.map((skill) => (
                           <label
                             key={skill}
-                            className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${selectedSkills.includes(skill)
-                              ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700"
-                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                              }`}
+                            className={`flex min-w-0 cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                              selectedSkills.includes(skill)
+                                ? "border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700"
+                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                            }`}
                           >
                             <input
                               type="checkbox"
                               checked={selectedSkills.includes(skill)}
                               onChange={() => toggleSkill(skill)}
-                              className="h-4 w-4 rounded"
+                              className="h-4 w-4 shrink-0 rounded"
                             />
-                            {skill}
+                            <span className="break-words">{skill}</span>
                           </label>
                         ))}
                       </div>
@@ -466,12 +469,12 @@ export default function WorkerJobsFeed() {
                   className="w-full"
                 />
 
-                <div className="mt-3 flex items-center gap-3">
+                <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
                   <input
                     type="number"
                     value={budgetMin}
                     onChange={(e) => setBudgetMin(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-400"
+                    className="w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-400"
                   />
 
                   <span className="text-slate-400">-</span>
@@ -480,11 +483,11 @@ export default function WorkerJobsFeed() {
                     type="number"
                     value={budgetMax}
                     onChange={(e) => setBudgetMax(Number(e.target.value))}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-400"
+                    className="w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-blue-400"
                   />
                 </div>
 
-                <div className="mt-2 flex justify-between text-xs text-slate-500">
+                <div className="mt-2 flex justify-between gap-3 text-xs text-slate-500">
                   <span>$0</span>
                   <span>${budgetMax.toLocaleString()}</span>
                 </div>
@@ -492,10 +495,11 @@ export default function WorkerJobsFeed() {
             </div>
           </aside>
 
-          <section>
+          <section className="min-w-0">
             <div className="flex flex-col gap-3 md:flex-row">
-              <div className="relative flex-1">
+              <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
                 <input
                   type="text"
                   placeholder="Search jobs by title, description, or keyword..."
@@ -508,7 +512,7 @@ export default function WorkerJobsFeed() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-400 md:w-56"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-blue-400 md:w-56"
               >
                 <option value="NEWEST">Newest First</option>
                 <option value="BUDGET_HIGH">Highest Budget</option>
@@ -521,18 +525,24 @@ export default function WorkerJobsFeed() {
 
               <div className="mt-2 flex flex-wrap gap-2">
                 {selectedCountry && (
-                  <FilterPill label={selectedCountry} onRemove={() => {
-                    setSelectedCountry("");
-                    setSelectedState("");
-                    setSelectedCities([]);
-                  }} />
+                  <FilterPill
+                    label={selectedCountry}
+                    onRemove={() => {
+                      setSelectedCountry("");
+                      setSelectedState("");
+                      setSelectedCities([]);
+                    }}
+                  />
                 )}
 
                 {selectedState && (
-                  <FilterPill label={selectedState} onRemove={() => {
-                    setSelectedState("");
-                    setSelectedCities([]);
-                  }} />
+                  <FilterPill
+                    label={selectedState}
+                    onRemove={() => {
+                      setSelectedState("");
+                      setSelectedCities([]);
+                    }}
+                  />
                 )}
 
                 {selectedCities.map((city) => (
@@ -557,22 +567,23 @@ export default function WorkerJobsFeed() {
               </div>
             </div>
 
-            <p className="mt-4 text-sm text-slate-700">
-              Found {filteredJobs.length} job{filteredJobs.length === 1 ? "" : "s"}{" "}
+            <p className="mt-4 break-words text-sm text-slate-700">
+              Found {filteredJobs.length} job
+              {filteredJobs.length === 1 ? "" : "s"}{" "}
               {sortBy === "NEWEST"
                 ? "sorted by newest first"
                 : sortBy === "BUDGET_HIGH"
-                  ? "sorted by highest budget"
-                  : "sorted by lowest budget"}
+                ? "sorted by highest budget"
+                : "sorted by lowest budget"}
             </p>
 
             <div className="mt-6">
               {loading ? (
-                <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm sm:p-8">
                   Loading jobs...
                 </div>
               ) : filteredJobs.length === 0 ? (
-                <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl text-center">
+                <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl bg-white p-6 text-center shadow-sm sm:min-h-[420px]">
                   <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
                     <Search className="h-10 w-10 text-slate-400" />
                   </div>
@@ -588,7 +599,8 @@ export default function WorkerJobsFeed() {
 
                   <button
                     onClick={clearAllFilters}
-                    className="mt-5 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+                    className="mt-5 w-full rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
+                    type="button"
                   >
                     Clear All Filters
                   </button>
@@ -626,17 +638,19 @@ export default function WorkerJobsFeed() {
 function FilterSection({ icon, title, onClear, children }) {
   return (
     <section className="border-b border-slate-200 pb-5 last:border-b-0 last:pb-0">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {icon}
-          <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0">{icon}</span>
+          <h3 className="truncate text-sm font-semibold text-slate-800">
+            {title}
+          </h3>
         </div>
 
         {onClear && (
           <button
             type="button"
             onClick={onClear}
-            className="text-xs font-medium text-slate-500 hover:text-slate-900"
+            className="shrink-0 text-xs font-medium text-slate-500 hover:text-slate-900"
           >
             Clear
           </button>
@@ -650,9 +664,14 @@ function FilterSection({ icon, title, onClear, children }) {
 
 function FilterPill({ label, onRemove }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
-      {label}
-      <button type="button" onClick={onRemove} className="text-slate-500">
+    <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+      <span className="min-w-0 break-words">{label}</span>
+
+      <button
+        type="button"
+        onClick={onRemove}
+        className="shrink-0 text-slate-500 hover:text-slate-800"
+      >
         ×
       </button>
     </span>
@@ -661,35 +680,39 @@ function FilterPill({ label, onRemove }) {
 
 function JobCard({ job, applied, onView, onApply }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-bold text-slate-950">{job.title}</h3>
-          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h3 className="break-words text-lg font-bold text-slate-950">
+            {job.title}
+          </h3>
+
+          <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-slate-600">
             {job.description}
           </p>
 
-          {Array.isArray(job.skills_required) && job.skills_required.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {job.skills_required.slice(0, 4).map((skill) => (
-                <span
-                  key={skill}
-                  className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
-                >
-                  {skill}
-                </span>
-              ))}
+          {Array.isArray(job.skills_required) &&
+            job.skills_required.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {job.skills_required.slice(0, 4).map((skill) => (
+                  <span
+                    key={skill}
+                    className="max-w-full rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+                  >
+                    <span className="break-words">{skill}</span>
+                  </span>
+                ))}
 
-              {job.skills_required.length > 4 && (
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-                  +{job.skills_required.length - 4} more
-                </span>
-              )}
-            </div>
-          )}
+                {job.skills_required.length > 4 && (
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+                    +{job.skills_required.length - 4} more
+                  </span>
+                )}
+              </div>
+            )}
         </div>
 
-        <span className="shrink-0 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+        <span className="w-fit shrink-0 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
           {Array.isArray(job.skills_required) && job.skills_required.length > 0
             ? job.skills_required[0]
             : job.category || "General"}
@@ -697,28 +720,21 @@ function JobCard({ job, applied, onView, onApply }) {
       </div>
 
       <div className="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-slate-400" />
-          <span>{formatLocation(job) || "Remote / Not set"}</span>
-        </div>
+        <InfoRow icon={<MapPin />} text={formatLocation(job) || "Remote / Not set"} />
 
-        <div className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-slate-400" />
-          <span>
-            {money(job.budget_min)} - {money(job.budget_max)}
-          </span>
-        </div>
+        <InfoRow
+          icon={<DollarSign />}
+          text={`${money(job.budget_min)} - ${money(job.budget_max)}`}
+        />
 
-        <div className="flex items-center gap-2">
-          <Briefcase className="h-4 w-4 text-slate-400" />
-          <span>{formatTimeAgo(job.created_at)}</span>
-        </div>
+        <InfoRow icon={<Briefcase />} text={formatTimeAgo(job.created_at)} />
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <button
           onClick={onView}
           className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+          type="button"
         >
           View Details
         </button>
@@ -727,6 +743,7 @@ function JobCard({ job, applied, onView, onApply }) {
           <button
             disabled
             className="rounded-xl bg-green-100 px-4 py-3 text-sm font-semibold text-green-700"
+            type="button"
           >
             Applied
           </button>
@@ -734,11 +751,23 @@ function JobCard({ job, applied, onView, onApply }) {
           <button
             onClick={onApply}
             className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+            type="button"
           >
             Apply Now
           </button>
         )}
       </div>
     </article>
+  );
+}
+
+function InfoRow({ icon, text }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="shrink-0 text-slate-400 [&>svg]:h-4 [&>svg]:w-4">
+        {icon}
+      </span>
+      <span className="min-w-0 break-words">{text}</span>
+    </div>
   );
 }

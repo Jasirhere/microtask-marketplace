@@ -1,118 +1,182 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LOCATION_DATA } from "../data/locations";
 
+function buildLocation(country, state, city) {
+  return [city, state, country].filter(Boolean).join(", ");
+}
+
+function parseLocation(value) {
+  if (!value) {
+    return {
+      country: "",
+      state: "",
+      city: "",
+    };
+  }
+
+  const parts = String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (parts.length >= 3) {
+    return {
+      city: parts[0] || "",
+      state: parts[1] || "",
+      country: parts[2] || "",
+    };
+  }
+
+  if (parts.length === 2) {
+    return {
+      city: "",
+      state: parts[0] || "",
+      country: parts[1] || "",
+    };
+  }
+
+  return {
+    country: parts[0] || "",
+    state: "",
+    city: "",
+  };
+}
+
 export default function LocationDropdowns({
-  value,
+  value = "",
   onChange,
   error,
   required = false,
 }) {
-  const [selectedCountry, setSelectedCountry] = useState("");
-  const [selectedState, setSelectedState] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
+  const initialLocation = parseLocation(value);
 
-  const countryData = useMemo(() => {
-    return LOCATION_DATA.find((item) => item.country === selectedCountry);
-  }, [selectedCountry]);
+  const [country, setCountry] = useState(initialLocation.country);
+  const [state, setState] = useState(initialLocation.state);
+  const [city, setCity] = useState(initialLocation.city);
 
-  const stateData = useMemo(() => {
-    return countryData?.states.find((item) => item.name === selectedState);
-  }, [countryData, selectedState]);
+  useEffect(() => {
+    const parsed = parseLocation(value);
+
+    setCountry(parsed.country);
+    setState(parsed.state);
+    setCity(parsed.city);
+  }, [value]);
+
+  const selectedCountry = useMemo(() => {
+    return LOCATION_DATA.find((item) => item.country === country);
+  }, [country]);
+
+  const selectedState = useMemo(() => {
+    return selectedCountry?.states?.find((item) => item.name === state);
+  }, [selectedCountry, state]);
+
+  const stateOptions = selectedCountry?.states || [];
+  const cityOptions = selectedState?.cities || [];
+
+  function emitChange(nextCountry, nextState, nextCity) {
+    const location = buildLocation(nextCountry, nextState, nextCity);
+    onChange(location);
+  }
 
   function handleCountryChange(e) {
-    const country = e.target.value;
+    const nextCountry = e.target.value;
 
-    setSelectedCountry(country);
-    setSelectedState("");
-    setSelectedCity("");
+    setCountry(nextCountry);
+    setState("");
+    setCity("");
 
-    onChange("");
+    emitChange(nextCountry, "", "");
   }
 
   function handleStateChange(e) {
-    const state = e.target.value;
+    const nextState = e.target.value;
 
-    setSelectedState(state);
-    setSelectedCity("");
+    setState(nextState);
+    setCity("");
 
-    onChange("");
+    emitChange(country, nextState, "");
   }
 
   function handleCityChange(e) {
-    const city = e.target.value;
+    const nextCity = e.target.value;
 
-    setSelectedCity(city);
-
-    if (!city || !selectedState || !selectedCountry) {
-      onChange("");
-      return;
-    }
-
-    onChange(`${city}, ${selectedState}, ${selectedCountry}`);
+    setCity(nextCity);
+    emitChange(country, state, nextCity);
   }
 
+  const selectClass = `w-full rounded-xl border bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 ${
+    error ? "border-red-500 bg-red-50" : "border-slate-300"
+  }`;
+
   return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-gray-700">
-        Location {required && <span className="text-red-500">*</span>}
+    <div className="min-w-0">
+      <label className="mb-1 block text-sm font-semibold text-slate-700">
+        Location {required ? "*" : ""}
       </label>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <select
-          value={selectedCountry}
-          onChange={handleCountryChange}
-          className={`w-full p-3 border rounded-xl bg-white ${
-            error ? "border-red-500" : ""
-          }`}
-        >
-          <option value="">Select country</option>
-          {LOCATION_DATA.map((item) => (
-            <option key={item.country} value={item.country}>
-              {item.country}
-            </option>
-          ))}
-        </select>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="min-w-0">
+          <select
+            value={country}
+            onChange={handleCountryChange}
+            className={selectClass}
+          >
+            <option value="">Select country</option>
 
-        <select
-          value={selectedState}
-          onChange={handleStateChange}
-          disabled={!selectedCountry}
-          className={`w-full p-3 border rounded-xl bg-white disabled:bg-gray-100 disabled:cursor-not-allowed ${
-            error ? "border-red-500" : ""
-          }`}
-        >
-          <option value="">Select state/region</option>
-          {countryData?.states.map((item) => (
-            <option key={item.name} value={item.name}>
-              {item.name}
-            </option>
-          ))}
-        </select>
+            {LOCATION_DATA.map((item) => (
+              <option key={item.country} value={item.country}>
+                {item.country}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <select
-          value={selectedCity}
-          onChange={handleCityChange}
-          disabled={!selectedState}
-          className={`w-full p-3 border rounded-xl bg-white disabled:bg-gray-100 disabled:cursor-not-allowed ${
-            error ? "border-red-500" : ""
-          }`}
-        >
-          <option value="">Select city</option>
-          {stateData?.cities.map((city) => (
-            <option key={city} value={city}>
-              {city}
+        <div className="min-w-0">
+          <select
+            value={state}
+            onChange={handleStateChange}
+            disabled={!country}
+            className={`${selectClass} disabled:bg-slate-100 disabled:text-slate-400`}
+          >
+            <option value="">
+              {country ? "Select state / province" : "Select country first"}
             </option>
-          ))}
-        </select>
+
+            {stateOptions.map((item) => (
+              <option key={item.name} value={item.name}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="min-w-0">
+          <select
+            value={city}
+            onChange={handleCityChange}
+            disabled={!state}
+            className={`${selectClass} disabled:bg-slate-100 disabled:text-slate-400`}
+          >
+            <option value="">
+              {state ? "Select city" : "Select state first"}
+            </option>
+
+            {cityOptions.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {value && (
-        <p className="mt-2 text-sm text-gray-500">
-          Selected: {value}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+
+      {!error && (
+        <p className="mt-1 text-xs text-slate-500">
+          Select country, state / province, and city.
         </p>
       )}
-
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

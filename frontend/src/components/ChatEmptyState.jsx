@@ -1,16 +1,21 @@
+import { MessageCircle } from "lucide-react";
+
 export default function ChatEmptyState() {
   return (
-    <div className="flex h-full flex-col items-center justify-center px-8 text-center">
-      <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 text-4xl">
-        💬
+    <div className="flex h-full min-h-0 items-center justify-center bg-slate-50 px-4 py-8 text-center">
+      <div className="max-w-sm">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+          <MessageCircle className="h-8 w-8" />
+        </div>
+
+        <h2 className="mt-5 break-words text-lg font-bold text-slate-900 sm:text-xl">
+          Select a conversation
+        </h2>
+
+        <p className="mt-2 break-words text-sm leading-6 text-slate-600">
+          Choose a chat from the left to view messages related to that job.
+        </p>
       </div>
-      <h2 className="text-2xl font-bold text-slate-900">
-        Select a conversation
-      </h2>
-      <p className="mt-3 max-w-md text-slate-500">
-        Choose an assigned worker or poster from the sidebar to start chatting
-        about a job.
-      </p>
     </div>
   );
 }

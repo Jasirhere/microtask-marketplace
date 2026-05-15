@@ -24,10 +24,10 @@ function formatLastSeen(dateString) {
 
 function TypingIndicator({ name }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-slate-500">
-      <span>{name} is typing</span>
+    <div className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
+      <span className="min-w-0 truncate">{name} is typing</span>
 
-      <span className="flex gap-1">
+      <span className="flex shrink-0 gap-1">
         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.2s]" />
         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.1s]" />
         <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
@@ -261,6 +261,7 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
       handleSendMessage();
     }
   }
+
   function handleViewProfile() {
     if (!selectedChat?.other_user_id) return;
 
@@ -271,31 +272,33 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
 
     navigate(`/posters/${selectedChat.other_user_id}`);
   }
+
   return (
-    <section className="flex h-full flex-col bg-slate-50">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+    <section className="flex h-full min-h-0 flex-col bg-slate-50">
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
         <div className="flex min-w-0 items-center gap-3">
           <div className="relative shrink-0">
             {selectedChat.other_user_photo_data_url ? (
               <img
                 src={selectedChat.other_user_photo_data_url}
                 alt={selectedChat.other_user_name}
-                className="h-12 w-12 rounded-full object-cover"
+                className="h-10 w-10 rounded-full object-cover sm:h-12 sm:w-12"
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 sm:h-12 sm:w-12">
                 {selectedChat.other_user_name?.[0]?.toUpperCase() || "U"}
               </div>
             )}
 
             <span
-              className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${otherUserOnline ? "bg-emerald-500" : "bg-slate-300"
-                }`}
+              className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                otherUserOnline ? "bg-emerald-500" : "bg-slate-300"
+              }`}
             />
           </div>
 
           <div className="min-w-0">
-            <h3 className="truncate text-base font-bold text-slate-900">
+            <h3 className="truncate text-sm font-bold text-slate-900 sm:text-base">
               {selectedChat.other_user_name}
             </h3>
 
@@ -303,24 +306,24 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
               {selectedChat.job_title}
             </p>
 
-            <p className="mt-0.5 text-xs text-slate-400">
+            <p className="mt-0.5 truncate text-xs text-slate-400">
               {isOtherUserTyping
                 ? `${selectedChat.other_user_name} is typing...`
                 : otherUserOnline
-                  ? "Online"
-                  : formatLastSeen(otherUserLastSeenAt)}
+                ? "Online"
+                : formatLastSeen(otherUserLastSeenAt)}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <button
             type="button"
             onClick={handleViewProfile}
-            className="flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            className="flex items-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-100 sm:px-4 sm:text-sm"
           >
-            <UserRound className="h-4 w-4" />
-            View Profile
+            <UserRound className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">View Profile</span>
           </button>
 
           <button
@@ -332,16 +335,16 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-5 py-6">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-5 sm:py-6">
         {loading ? (
           <div className="text-sm text-slate-500">Loading messages...</div>
         ) : messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-sm text-slate-500">
+          <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-500">
             No messages yet. Start the conversation.
           </div>
         ) : (
-          <div className="space-y-5">
-            <div className="mx-auto w-fit rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-700">
+          <div className="space-y-4 sm:space-y-5">
+            <div className="mx-auto max-w-full rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-700">
               Chat activated. You can now communicate about this job.
             </div>
 
@@ -363,11 +366,11 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
         )}
       </div>
 
-      <footer className="border-t border-slate-200 bg-white px-5 py-4">
-        <div className="flex items-center gap-3">
+      <footer className="shrink-0 border-t border-slate-200 bg-white px-3 py-3 sm:px-5 sm:py-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
-            className="rounded-full p-2 text-slate-500 transition hover:bg-slate-100"
+            className="hidden rounded-full p-2 text-slate-500 transition hover:bg-slate-100 sm:block"
           >
             <Paperclip className="h-5 w-5" />
           </button>
@@ -378,14 +381,14 @@ export default function ChatWindow({ selectedChat, onChatMetaChange }) {
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="min-w-0 flex-1 rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
+            className="min-w-0 flex-1 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white sm:px-5"
           />
 
           <button
             type="button"
             onClick={handleSendMessage}
             disabled={!socketConnected || !input.trim()}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Send className="h-5 w-5" />
           </button>

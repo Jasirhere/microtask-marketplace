@@ -1,4 +1,4 @@
-import { Camera, Plus, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 
 export default function ProfilePhotoUpload({
   id = "profile-photo-upload",
@@ -9,21 +9,10 @@ export default function ProfilePhotoUpload({
 }) {
   function handleFileChange(e) {
     const file = e.target.files?.[0];
-
     if (!file) return;
 
-    const validTypes = ["image/jpeg", "image/png", "image/webp"];
-
-    if (!validTypes.includes(file.type)) {
-      alert("Please upload a JPG, PNG, or WEBP image.");
-      return;
-    }
-
-    const maxSizeInMb = 2;
-    const maxSizeInBytes = maxSizeInMb * 1024 * 1024;
-
-    if (file.size > maxSizeInBytes) {
-      alert(`Image must be less than ${maxSizeInMb}MB.`);
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload an image file.");
       return;
     }
 
@@ -34,78 +23,78 @@ export default function ProfilePhotoUpload({
     };
 
     reader.readAsDataURL(file);
-
-    e.target.value = "";
   }
 
-  function handleRemovePhoto() {
+  function handleRemove() {
     onChange("");
   }
 
   return (
-    <div>
-      <label className="mb-3 block text-sm font-medium text-slate-700">
+    <div className="min-w-0">
+      <label className="mb-2 block text-sm font-semibold text-slate-700">
         {label}
       </label>
 
-      <div className="flex items-center gap-5">
-        <div className="relative">
-          <label
-            htmlFor={id}
-            className={`flex h-28 w-28 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed bg-slate-50 transition hover:bg-slate-100 ${
-              error ? "border-red-400" : "border-slate-300"
-            }`}
-          >
-            {value ? (
-              <img
-                src={value}
-                alt="Profile preview"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <Camera className="h-8 w-8 text-slate-400" />
-            )}
-
-            <input
-              id={id}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              onChange={handleFileChange}
-              className="hidden"
+      <div
+        className={`flex flex-col gap-4 rounded-2xl border bg-white p-4 sm:flex-row sm:items-center ${
+          error ? "border-red-500 bg-red-50" : "border-slate-300"
+        }`}
+      >
+        <div className="shrink-0">
+          {value ? (
+            <img
+              src={value}
+              alt="Profile preview"
+              className="h-24 w-24 rounded-2xl border border-slate-200 object-cover shadow-sm"
             />
-          </label>
-
-          <label
-            htmlFor={id}
-            className="absolute bottom-1 right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-blue-600 text-white shadow-md transition hover:bg-blue-700"
-          >
-            <Plus className="h-5 w-5" />
-          </label>
+          ) : (
+            <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-400">
+              <Upload className="h-7 w-7" />
+            </div>
+          )}
         </div>
 
-        <div>
-          <p className="text-sm font-medium text-slate-900">
+        <div className="min-w-0 flex-1">
+          <p className="break-words text-sm font-medium text-slate-900">
             Upload a clear profile photo
           </p>
 
-          <p className="mt-1 text-xs leading-5 text-slate-500">
-            JPG, PNG, or WEBP. Max size 2MB.
+          <p className="mt-1 break-words text-xs leading-5 text-slate-500">
+            Use a square image where possible. JPG, PNG, or WebP works best.
           </p>
 
-          {value && (
-            <button
-              type="button"
-              onClick={handleRemovePhoto}
-              className="mt-3 inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <label
+              htmlFor={id}
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 sm:w-auto"
             >
-              <X className="h-3 w-3" />
-              Remove photo
-            </button>
-          )}
+              <Upload className="h-4 w-4" />
+              Choose Photo
+            </label>
+
+            {value && (
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 sm:w-auto"
+              >
+                <X className="h-4 w-4" />
+                Remove
+              </button>
+            )}
+          </div>
+
+          <input
+            id={id}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
       </div>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

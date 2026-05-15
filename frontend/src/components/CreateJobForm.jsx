@@ -57,10 +57,19 @@ export default function CreateJobForm({
   }
 
   function inputClass(fieldName) {
-    return `w-full rounded-xl border px-4 py-3 outline-none ${fieldErrors[fieldName]
+    return `w-full rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-900 outline-none sm:px-4 sm:py-3 ${
+      fieldErrors[fieldName]
         ? "border-red-500 bg-red-50 focus:border-red-500"
-        : "focus:border-blue-500"
-      }`;
+        : "border-slate-300 focus:border-blue-500"
+    }`;
+  }
+
+  function compactInputClass(fieldName) {
+    return `w-full min-w-0 rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-900 outline-none sm:px-4 sm:py-3 ${
+      fieldErrors[fieldName]
+        ? "border-red-500 bg-red-50 focus:border-red-500"
+        : "border-slate-300 focus:border-blue-500"
+    }`;
   }
 
   function validateForm() {
@@ -92,6 +101,7 @@ export default function CreateJobForm({
     } else if (description.length > 1000) {
       errors.description = "Description cannot exceed 1000 characters";
     }
+
     if (!form.country) {
       errors.country = "Country is required";
     }
@@ -306,14 +316,17 @@ export default function CreateJobForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       {serverError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="break-words rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {serverError}
         </div>
       )}
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
         <div className="md:col-span-2">
-          <label className="mb-1 block text-sm font-medium">Job Title *</label>
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
+            Job Title *
+          </label>
+
           <input
             name="title"
             value={form.title}
@@ -322,34 +335,41 @@ export default function CreateJobForm({
             placeholder="e.g. Move furniture to new apartment"
           />
 
-          <div className="mt-1 flex justify-between text-sm">
+          <div className="mt-1 flex items-start justify-between gap-3 text-sm">
             <FieldError message={fieldErrors.title} />
-            <span className="text-slate-400">{form.title.length}/80</span>
+            <span className="shrink-0 text-slate-400">
+              {form.title.length}/80
+            </span>
           </div>
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-sm font-medium">
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
             Description *
           </label>
+
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
             rows={4}
-            className={inputClass("description")}
+            className={`${inputClass("description")} resize-y`}
             placeholder="Describe the job clearly, including what needs to be done, location context, and any tools needed..."
           />
 
-          <div className="mt-1 flex justify-between text-sm">
+          <div className="mt-1 flex items-start justify-between gap-3 text-sm">
             <FieldError message={fieldErrors.description} />
-            <span className="text-slate-400">
+            <span className="shrink-0 text-slate-400">
               {form.description.length}/1000
             </span>
           </div>
         </div>
+
         <div>
-          <label className="mb-1 block text-sm font-medium">Country *</label>
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
+            Country *
+          </label>
+
           <select
             name="country"
             value={form.country}
@@ -369,9 +389,10 @@ export default function CreateJobForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
             State / Province *
           </label>
+
           <select
             name="state"
             value={form.state}
@@ -394,7 +415,10 @@ export default function CreateJobForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">City *</label>
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
+            City *
+          </label>
+
           <select
             name="city"
             value={form.city}
@@ -417,9 +441,10 @@ export default function CreateJobForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
             Area / Locality *
           </label>
+
           <input
             name="area"
             value={form.area}
@@ -432,30 +457,32 @@ export default function CreateJobForm({
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-sm font-medium">
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
             Address Details
           </label>
+
           <textarea
             name="address_details"
             value={form.address_details}
             onChange={handleChange}
             rows={3}
-            className={inputClass("address_details")}
+            className={`${inputClass("address_details")} resize-y`}
             placeholder="House number, floor, street, landmark..."
           />
 
-          <div className="mt-1 flex justify-between text-sm">
+          <div className="mt-1 flex items-start justify-between gap-3 text-sm">
             <FieldError message={fieldErrors.address_details} />
-            <span className="text-slate-400">
+            <span className="shrink-0 text-slate-400">
               {form.address_details.length}/300
             </span>
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
             Budget Min *
           </label>
+
           <input
             type="number"
             name="budget_min"
@@ -470,9 +497,10 @@ export default function CreateJobForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
             Budget Max *
           </label>
+
           <input
             type="number"
             name="budget_max"
@@ -487,17 +515,17 @@ export default function CreateJobForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Deadline *</label>
-          <div className="flex gap-2">
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
+            Deadline *
+          </label>
+
+          <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-2 sm:grid-cols-[minmax(0,1fr)_140px]">
             <input
               type="number"
               name="deadline_value"
               value={form.deadline_value}
               onChange={handleChange}
-              className={`w-1/2 rounded-xl border px-4 py-3 outline-none ${fieldErrors.deadline_value
-                  ? "border-red-500 bg-red-50"
-                  : "focus:border-blue-500"
-                }`}
+              className={compactInputClass("deadline_value")}
               placeholder="2"
               min="1"
             />
@@ -506,7 +534,7 @@ export default function CreateJobForm({
               name="deadline_unit"
               value={form.deadline_unit}
               onChange={handleChange}
-              className="w-1/2 rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
+              className="w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 sm:px-4 sm:py-3"
             >
               <option value="hours">hours</option>
               <option value="days">days</option>
@@ -518,19 +546,17 @@ export default function CreateJobForm({
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
             Estimated Duration *
           </label>
-          <div className="flex gap-2">
+
+          <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-2 sm:grid-cols-[minmax(0,1fr)_140px]">
             <input
               type="number"
               name="estimated_duration_value"
               value={form.estimated_duration_value}
               onChange={handleChange}
-              className={`w-1/2 rounded-xl border px-4 py-3 outline-none ${fieldErrors.estimated_duration_value
-                  ? "border-red-500 bg-red-50"
-                  : "focus:border-blue-500"
-                }`}
+              className={compactInputClass("estimated_duration_value")}
               placeholder="4"
               min="1"
             />
@@ -539,7 +565,7 @@ export default function CreateJobForm({
               name="estimated_duration_unit"
               value={form.estimated_duration_unit}
               onChange={handleChange}
-              className="w-1/2 rounded-xl border px-4 py-3 outline-none focus:border-blue-500"
+              className="w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 sm:px-4 sm:py-3"
             >
               <option value="hours">hours</option>
               <option value="days">days</option>
@@ -549,7 +575,7 @@ export default function CreateJobForm({
           <FieldError message={fieldErrors.estimated_duration_value} />
         </div>
 
-        <div className="md:col-span-2">
+        <div className="min-w-0 md:col-span-2">
           <SkillsMultiSelect
             value={form.skills_required}
             onChange={handleSkillsChange}
@@ -560,28 +586,33 @@ export default function CreateJobForm({
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-1 block text-sm font-medium">Notes</label>
+          <label className="mb-1 block text-sm font-semibold text-slate-700">
+            Notes
+          </label>
+
           <textarea
             name="notes"
             value={form.notes}
             onChange={handleChange}
             rows={3}
-            className={inputClass("notes")}
+            className={`${inputClass("notes")} resize-y`}
             placeholder="Optional notes..."
           />
 
-          <div className="mt-1 flex justify-between text-sm">
+          <div className="mt-1 flex items-start justify-between gap-3 text-sm">
             <FieldError message={fieldErrors.notes} />
-            <span className="text-slate-400">{form.notes.length}/500</span>
+            <span className="shrink-0 text-slate-400">
+              {form.notes.length}/500
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 border-t pt-4">
+      <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-xl border px-4 py-2 hover:bg-slate-50"
+          className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto"
         >
           Cancel
         </button>
@@ -589,7 +620,7 @@ export default function CreateJobForm({
         <button
           type="submit"
           disabled={loading}
-          className="rounded-xl bg-blue-600 px-5 py-2 text-white hover:bg-blue-700 disabled:opacity-60"
+          className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 sm:w-auto"
         >
           {loading
             ? mode === "edit"

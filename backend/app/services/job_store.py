@@ -1,16 +1,68 @@
-import uuid
-from datetime import datetime, timezone
 from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
+from app.db.models import Job
 from app.schemas.job import JobCreate, JobPublic
 
-# in-memory job storage
-_jobs: List[JobPublic] = []
+
+def _parse_uuid(value: str) -> UUID | None:
+    try:
+        return UUID(value)
+    except ValueError:
+        return None
 
 
-def create_job(job_data: JobCreate, poster_user_id: str) -> JobPublic:
-    job = JobPublic(
-        id=str(uuid.uuid4()),
-        poster_user_id=poster_user_id,
+def _to_job_public(job: Job) -> JobPublic:
+    return JobPublic(
+        id=str(job.id),
+        poster_user_id=str(job.poster_user_id),
+
+        title=job.title,
+        description=job.description,
+        category=job.category,
+
+        country=job.country,
+        state=job.state,
+        city=job.city,
+        area=job.area,
+        address_details=job.address_details,
+
+        latitude=job.latitude,
+        longitude=job.longitude,
+
+        budget_min=job.budget_min,
+        budget_max=job.budget_max,
+
+        deadline_value=job.deadline_value,
+        deadline_unit=job.deadline_unit,
+
+        estimated_duration_value=job.estimated_duration_value,
+        estimated_duration_unit=job.estimated_duration_unit,
+
+        skills_required=job.skills_required or [],
+        notes=job.notes,
+
+        status=job.status,
+
+        payment_status=job.payment_status,
+        paid_at=job.paid_at,
+        stripe_payment_intent_id=job.stripe_payment_intent_id,
+
+        created_at=job.created_at,
+        final_price=job.final_price,
+    )
+
+
+def create_job(db: Session, job_data: JobCreate, poster_user_id: str) -> JobPublic:
+    poster_uuid = _parse_uuid(poster_user_id)
+    if poster_uuid is None:
+        raise ValueError("Invalid poster_user_id")
+
+    job = Job(
+        poster_user_id=poster_uuid,
 
         title=job_data.title,
         description=job_data.description,
@@ -42,65 +94,180 @@ def create_job(job_data: JobCreate, poster_user_id: str) -> JobPublic:
         payment_status="UNPAID",
         paid_at=None,
         stripe_payment_intent_id=None,
-
-        created_at=datetime.now(timezone.utc),
+        final_price=None,
     )
 
-    _jobs.append(job)
-    return job
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    return _to_job_public(job)
 
 
-def get_jobs_by_poster(poster_user_id: str) -> List[JobPublic]:
-    """Return all jobs created by the given poster user ID."""
-    return [j for j in _jobs if j.poster_user_id == poster_user_id]
+def get_jobs_by_poster(db: Session, poster_user_id: str) -> List[JobPublic]:
+    poster_uuid = _parse_uuid(poster_user_id)
+    if poster_uuid is None:
+        return []
+
+    jobs = (
+        db.query(Job)
+        .filter(Job.poster_user_id == poster_uuid)
+        .order_by(Job.created_at.desc())
+        .all()
+    )
+
+    return [_to_job_public(job) for job in jobs]
 
 
-def get_job_by_id(job_id: str) -> Optional[JobPublic]:
-    """Lookup a job by its ID, or return ``None`` if not found."""
-    for j in _jobs:
-        if j.id == job_id:
-            return j
-    return None
+def get_job_by_id(db: Session, job_id: str) -> Optional[JobPublic]:
+    job_uuid = _parse_uuid(job_id)
+    if job_uuid is None:
+        return None
+
+    job = db.query(Job).filter(Job.id == job_uuid).first()
+
+    if not job:
+        return None
+
+    return _to_job_public(job)
+
 
 def get_open_jobs(
+    db: Session,
     search: str | None = None,
     category: str | None = None,
     city: str | None = None,
     exclude_job_ids: list[str] | None = None,
 ) -> List[JobPublic]:
-    jobs = [job for job in _jobs if job.status == "OPEN"]
+    query = db.query(Job).filter(Job.status == "OPEN")
 
     if exclude_job_ids:
-        jobs = [job for job in jobs if job.id not in exclude_job_ids]
-
-    if search:
-        q = search.strip().lower()
-        jobs = [
-            job for job in jobs
-            if q in job.title.lower() or q in job.description.lower()
+        parsed_ids = [
+            parsed_id
+            for parsed_id in (_parse_uuid(job_id) for job_id in exclude_job_ids)
+            if parsed_id is not None
         ]
 
+        if parsed_ids:
+            query = query.filter(~Job.id.in_(parsed_ids))
+
+    if search:
+        q = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                Job.title.ilike(q),
+                Job.description.ilike(q),
+            )
+        )
+
     if category:
-        jobs = [job for job in jobs if job.category == category]
+        query = query.filter(Job.category == category)
 
     if city:
-        jobs = [job for job in jobs if job.city.lower() == city.lower()]
+        query = query.filter(Job.city.ilike(city.strip()))
 
-    jobs.sort(key=lambda job: job.created_at, reverse=True)
-    return jobs
+    jobs = query.order_by(Job.created_at.desc()).all()
 
-def delete_jobs_by_poster(poster_user_id: str) -> None:
-    global _jobs
-    _jobs = [job for job in _jobs if job.poster_user_id != poster_user_id]
+    return [_to_job_public(job) for job in jobs]
 
-def delete_job(job_id: str) -> bool:
-    global _jobs
-    before = len(_jobs)
-    _jobs = [job for job in _jobs if job.id != job_id]
-    return len(_jobs) < before
 
-def set_job_status(job_id: str, new_status: str):
-    job = get_job_by_id(job_id)
-    if job:
-        job.status = new_status
-    return job
+def delete_jobs_by_poster(db: Session, poster_user_id: str) -> None:
+    poster_uuid = _parse_uuid(poster_user_id)
+    if poster_uuid is None:
+        return
+
+    db.query(Job).filter(Job.poster_user_id == poster_uuid).delete()
+    db.commit()
+
+
+def delete_job(db: Session, job_id: str) -> bool:
+    job_uuid = _parse_uuid(job_id)
+    if job_uuid is None:
+        return False
+
+    job = db.query(Job).filter(Job.id == job_uuid).first()
+
+    if not job:
+        return False
+
+    db.delete(job)
+    db.commit()
+
+    return True
+
+
+def set_job_status(db: Session, job_id: str, new_status: str) -> Optional[JobPublic]:
+    job_uuid = _parse_uuid(job_id)
+    if job_uuid is None:
+        return None
+
+    job = db.query(Job).filter(Job.id == job_uuid).first()
+
+    if not job:
+        return None
+
+    job.status = new_status
+
+    db.commit()
+    db.refresh(job)
+
+    return _to_job_public(job)
+
+
+def update_job(db: Session, job_id: str, job_data: JobCreate) -> Optional[JobPublic]:
+    job_uuid = _parse_uuid(job_id)
+    if job_uuid is None:
+        return None
+
+    job = db.query(Job).filter(Job.id == job_uuid).first()
+
+    if not job:
+        return None
+
+    job.title = job_data.title
+    job.description = job_data.description
+    job.category = job_data.category
+    job.country = job_data.country
+    job.state = job_data.state
+    job.city = job_data.city
+    job.area = job_data.area
+    job.address_details = job_data.address_details
+    job.latitude = job_data.latitude
+    job.longitude = job_data.longitude
+    job.budget_min = job_data.budget_min
+    job.budget_max = job_data.budget_max
+    job.deadline_value = job_data.deadline_value
+    job.deadline_unit = job_data.deadline_unit
+    job.estimated_duration_value = job_data.estimated_duration_value
+    job.estimated_duration_unit = job_data.estimated_duration_unit
+    job.skills_required = job_data.skills_required
+    job.notes = job_data.notes
+
+    db.commit()
+    db.refresh(job)
+
+    return _to_job_public(job)
+
+
+def assign_job(
+    db: Session,
+    job_id: str,
+    final_price: float,
+) -> Optional[JobPublic]:
+    job_uuid = _parse_uuid(job_id)
+
+    if job_uuid is None:
+        return None
+
+    job = db.query(Job).filter(Job.id == job_uuid).first()
+
+    if not job:
+        return None
+
+    job.status = "ASSIGNED"
+    job.final_price = final_price
+
+    db.commit()
+    db.refresh(job)
+
+    return _to_job_public(job)

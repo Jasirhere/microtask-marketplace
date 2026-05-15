@@ -3,9 +3,10 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from app.schemas.review import ReviewCreate, ReviewPublic
-from app.services.job_store import _jobs
-from app.services.application_store import get_selected_applications_for_poster_jobs
-# Temporary storage
+
+
+# Temporary in-memory review storage.
+# We will convert this to PostgreSQL later.
 _reviews: List[ReviewPublic] = []
 
 
@@ -29,6 +30,7 @@ def create_review(
         comment=body.comment,
         created_at=datetime.now(timezone.utc),
     )
+
     _reviews.append(review)
     return review
 
@@ -40,6 +42,7 @@ def get_review_by_job_and_reviewer(
     for review in _reviews:
         if review.job_id == job_id and review.reviewer_user_id == reviewer_user_id:
             return review
+
     return None
 
 
@@ -47,62 +50,39 @@ def get_reviews_for_job(job_id: str) -> List[ReviewPublic]:
     return [review for review in _reviews if review.job_id == job_id]
 
 
-def get_reviews_for_user(user_id: str, reviewee_role: str):
+def get_reviews_for_user(user_id: str, reviewee_role: str) -> List[ReviewPublic]:
     return [
         review
         for review in _reviews
         if review.reviewee_user_id == user_id and review.reviewee_role == reviewee_role
     ]
 
+
 def calculate_user_stats(user_id: str, role: str):
     reviews = [
-        r for r in _reviews
-        if r.reviewee_user_id == user_id and r.reviewee_role == role
+        review
+        for review in _reviews
+        if review.reviewee_user_id == user_id and review.reviewee_role == role
     ]
-
-    jobs = [
-        j for j in _jobs
-        if (role == "worker" and j.selected_worker_user_id == user_id)
-        or (role == "poster" and j.poster_user_id == user_id)
-    ]
-
-    completed_jobs = [j for j in jobs if j.status == "COMPLETED"]
 
     rating = 0
     if reviews:
-        rating = sum(r.rating for r in reviews) / len(reviews)
-
-    success_rate = 0
-    if jobs:
-        success_rate = (len(completed_jobs) / len(jobs)) * 100
-
-    avg_response_minutes = None
-
-    if role == "poster":
-        selected_apps = get_selected_applications_for_poster_jobs(user_id, jobs)
-
-        response_minutes = []
-
-        for app in selected_apps:
-            if app.created_at and app.selected_at:
-                diff = app.selected_at - app.created_at
-                response_minutes.append(diff.total_seconds() / 60)
-
-        if response_minutes:
-            avg_response_minutes = sum(response_minutes) / len(response_minutes)
+        rating = sum(review.rating for review in reviews) / len(reviews)
 
     return {
         "rating": round(rating, 1),
         "total_reviews": len(reviews),
-        "jobs": len(completed_jobs),
-        "success_rate": int(success_rate),
-        "avg_response_minutes": avg_response_minutes,
+        "jobs": 0,
+        "success_rate": 0,
+        "avg_response_minutes": None,
     }
+
 
 def get_user_review_summary(user_id: str, role: str):
     reviews = [
-        r for r in _reviews
-        if r.reviewee_user_id == user_id and r.reviewee_role == role
+        review
+        for review in _reviews
+        if review.reviewee_user_id == user_id and review.reviewee_role == role
     ]
 
     if not reviews:
@@ -111,7 +91,7 @@ def get_user_review_summary(user_id: str, role: str):
             "reviews_count": 0,
         }
 
-    average_rating = sum(r.rating for r in reviews) / len(reviews)
+    average_rating = sum(review.rating for review in reviews) / len(reviews)
 
     return {
         "average_rating": round(average_rating, 1),

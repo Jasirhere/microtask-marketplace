@@ -33,19 +33,25 @@ export default function AssignedJobCompletionActions({
 
   function alreadyCompletedByMe() {
     if (!completion) return false;
+
     return currentSide === "poster"
       ? completion.poster_confirmed
       : completion.worker_confirmed;
   }
+
   async function handleConfirmComplete() {
     try {
       setLoadingComplete(true);
+
       const data = await markJobCompleted(jobId);
       setCompletion(data);
       setShowConfirm(false);
 
-      // Show review modal if current user's side is confirmed
-      const userConfirmed = currentSide === "poster" ? data?.poster_confirmed : data?.worker_confirmed;
+      const userConfirmed =
+        currentSide === "poster"
+          ? data?.poster_confirmed
+          : data?.worker_confirmed;
+
       if (userConfirmed) {
         setShowReview(true);
       }
@@ -60,6 +66,7 @@ export default function AssignedJobCompletionActions({
   async function handleSubmitReview({ rating, feedback }) {
     try {
       setLoadingReview(true);
+
       await submitReview({
         job_id: jobId,
         reviewee_user_id: revieweeUserId,
@@ -79,26 +86,28 @@ export default function AssignedJobCompletionActions({
 
   return (
     <>
-      <div className="flex items-center gap-3">
+      <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
         {!alreadyCompletedByMe() && (
           <button
             onClick={() => setShowConfirm(true)}
-            className="flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-lg font-semibold text-white hover:bg-green-700"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-700 sm:w-auto sm:px-5"
+            type="button"
           >
-            <span>✓</span>
-            <span>Mark as Completed</span>
+            <span className="shrink-0">✓</span>
+            <span className="min-w-0 break-words">Mark as Completed</span>
           </button>
         )}
 
         {alreadyCompletedByMe() && (
-          <div className="rounded-xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700">
+          <div className="w-full rounded-xl bg-slate-100 px-4 py-3 text-center text-sm font-medium text-slate-700 sm:w-auto sm:text-left">
             You marked this job as completed
           </div>
         )}
 
         <button
           onClick={openChat}
-          className="rounded-xl border px-5 py-3 text-lg font-medium text-slate-800 hover:bg-slate-50"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50 sm:w-auto sm:px-5"
+          type="button"
         >
           Open Chat
         </button>

@@ -1,99 +1,104 @@
-import {
-  Briefcase,
-  Hammer,
-  Globe,
-  MessageCircle,
-  Mail,
-} from "lucide-react";
+import { Link } from "react-router-dom";
+import { Hammer } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300 py-16">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <Hammer className="w-6 h-6 text-white" />
+    <footer className="border-t border-slate-200 bg-slate-950 px-4 py-10 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="grid gap-8 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="min-w-0">
+            <Link to="/" className="flex w-fit items-center gap-2">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600">
+                <Hammer className="h-5 w-5 text-white" />
               </div>
-              <span className="text-2xl font-semibold text-white">WorkHub</span>
-            </div>
 
-            <p className="text-gray-400 mb-6">
-              A modern marketplace where local talent and opportunity come together.
+              <span className="truncate text-xl font-bold">WorkHub</span>
+            </Link>
+
+            <p className="mt-4 max-w-sm break-words text-sm leading-6 text-slate-400">
+              A simple local micro-task marketplace for posters and workers to
+              manage jobs, applications, chat, reviews, and completion flow.
             </p>
-
-            <div className="flex gap-4">
-              <a
-                href="#"
-                className="w-10 h-10 bg-gray-800 hover:bg-indigo-600 rounded-full flex items-center justify-center transition-colors"
-              >
-                <Globe className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 bg-gray-800 hover:bg-indigo-600 rounded-full flex items-center justify-center transition-colors"
-              >
-                <MessageCircle className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 bg-gray-800 hover:bg-indigo-600 rounded-full flex items-center justify-center transition-colors"
-              >
-                <Mail className="w-5 h-5" />
-              </a>
-            </div>
           </div>
 
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
-              <Hammer className="w-5 h-5" />
-              For Workers
-            </h3>
-            <ul className="space-y-3">
-              <li><a href="#" className="hover:text-white transition-colors">Browse Jobs</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">How to Apply</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Reviews</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Support</a></li>
-            </ul>
-          </div>
+          <FooterColumn
+            title="Platform"
+            links={[
+              { label: "Features", href: "#features" },
+              { label: "How it works", href: "#how-it-works" },
+              { label: "Reviews", href: "#testimonials" },
+            ]}
+          />
 
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-4 flex items-center gap-2">
-              <Briefcase className="w-5 h-5" />
-              For Employers
-            </h3>
-            <ul className="space-y-3">
-              <li><a href="#" className="hover:text-white transition-colors">Post a Job</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">How to Hire</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Trust & Safety</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Support</a></li>
-            </ul>
-          </div>
+          <FooterColumn
+            title="Account"
+            links={[
+              { label: "Sign in", to: "/login" },
+              { label: "Register", to: "/register" },
+            ]}
+          />
 
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-4">Company</h3>
-            <ul className="space-y-3">
-              <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-            </ul>
-          </div>
+          <FooterColumn
+            title="Modes"
+            links={[
+              { label: "Post jobs", to: "/register" },
+              { label: "Find work", to: "/register" },
+            ]}
+          />
         </div>
 
-        <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-400 text-sm">
-            © 2026 WorkHub. All rights reserved.
+        <div className="mt-8 flex flex-col gap-3 border-t border-slate-800 pt-6 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <p className="break-words">
+            © {new Date().getFullYear()} WorkHub. All rights reserved.
           </p>
 
-          <div className="flex gap-6 text-sm">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <a href="#" className="hover:text-white">
+              Privacy
+            </a>
+
+            <a href="#" className="hover:text-white">
+              Terms
+            </a>
+
+            <a href="#" className="hover:text-white">
+              Contact
+            </a>
           </div>
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterColumn({ title, links }) {
+  return (
+    <div className="min-w-0">
+      <h3 className="mb-3 break-words text-sm font-semibold uppercase tracking-wide text-slate-300">
+        {title}
+      </h3>
+
+      <div className="space-y-2">
+        {links.map((link) =>
+          link.to ? (
+            <Link
+              key={link.label}
+              to={link.to}
+              className="block break-words text-sm text-slate-400 hover:text-white"
+            >
+              {link.label}
+            </Link>
+          ) : (
+            <a
+              key={link.label}
+              href={link.href}
+              className="block break-words text-sm text-slate-400 hover:text-white"
+            >
+              {link.label}
+            </a>
+          )
+        )}
+      </div>
+    </div>
   );
 }

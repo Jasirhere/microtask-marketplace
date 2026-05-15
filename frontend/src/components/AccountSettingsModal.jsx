@@ -2,8 +2,12 @@ import { useState } from "react";
 import Modal from "./Modal";
 import { changePassword, deleteAccount } from "../api/account";
 
-
-export default function AccountSettingsModal({ isOpen, onClose, onAfterDelete }) {
+export default function AccountSettingsModal({
+  isOpen,
+  onClose,
+  onAfterDelete,
+  onAfterDeactivate,
+}) {
   const [passwordForm, setPasswordForm] = useState({
     current_password: "",
     new_password: "",
@@ -20,10 +24,14 @@ export default function AccountSettingsModal({ isOpen, onClose, onAfterDelete })
 
   function handlePasswordChange(e) {
     const { name, value } = e.target;
+
     setPasswordForm((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    setPasswordError("");
+    setPasswordSuccess("");
   }
 
   async function handleChangePassword(e) {
@@ -51,7 +59,9 @@ export default function AccountSettingsModal({ isOpen, onClose, onAfterDelete })
         confirm_password: "",
       });
     } catch (err) {
-      setPasswordError(err?.response?.data?.detail || "Failed to change password");
+      setPasswordError(
+        err?.response?.data?.detail || "Failed to change password"
+      );
     } finally {
       setPasswordLoading(false);
     }
@@ -63,8 +73,17 @@ export default function AccountSettingsModal({ isOpen, onClose, onAfterDelete })
 
     try {
       setDeleteLoading(true);
+
       await deleteAccount({ password: deletePassword });
-      onAfterDelete();
+
+      if (onAfterDelete) {
+        onAfterDelete();
+        return;
+      }
+
+      if (onAfterDeactivate) {
+        onAfterDeactivate();
+      }
     } catch (err) {
       setDeleteError(err?.response?.data?.detail || "Failed to delete account");
     } finally {
@@ -74,72 +93,89 @@ export default function AccountSettingsModal({ isOpen, onClose, onAfterDelete })
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Account Settings">
-      <div className="space-y-10">
+      <div className="space-y-8 sm:space-y-10">
         <form onSubmit={handleChangePassword} className="space-y-4">
-          <h3 className="text-xl font-semibold">Change Password</h3>
+          <div>
+            <h3 className="break-words text-lg font-semibold text-slate-900 sm:text-xl">
+              Change Password
+            </h3>
+
+            <p className="mt-1 break-words text-sm leading-6 text-slate-600">
+              Update your password using your current password.
+            </p>
+          </div>
 
           {passwordError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="break-words rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {passwordError}
             </div>
           )}
 
           {passwordSuccess && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+            <div className="break-words rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
               {passwordSuccess}
             </div>
           )}
 
-          <input
-            type="password"
-            name="current_password"
-            value={passwordForm.current_password}
-            onChange={handlePasswordChange}
-            placeholder="Current password"
-            className="w-full rounded-xl border px-4 py-3"
-            required
-          />
+          <div className="grid grid-cols-1 gap-4">
+            <input
+              type="password"
+              name="current_password"
+              value={passwordForm.current_password}
+              onChange={handlePasswordChange}
+              placeholder="Current password"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              required
+            />
 
-          <input
-            type="password"
-            name="new_password"
-            value={passwordForm.new_password}
-            onChange={handlePasswordChange}
-            placeholder="New password"
-            className="w-full rounded-xl border px-4 py-3"
-            required
-          />
+            <input
+              type="password"
+              name="new_password"
+              value={passwordForm.new_password}
+              onChange={handlePasswordChange}
+              placeholder="New password"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              required
+            />
 
-          <input
-            type="password"
-            name="confirm_password"
-            value={passwordForm.confirm_password}
-            onChange={handlePasswordChange}
-            placeholder="Confirm new password"
-            className="w-full rounded-xl border px-4 py-3"
-            required
-          />
+            <input
+              type="password"
+              name="confirm_password"
+              value={passwordForm.confirm_password}
+              onChange={handlePasswordChange}
+              placeholder="Confirm new password"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              required
+            />
+          </div>
 
-          <button
-            type="submit"
-            disabled={passwordLoading}
-            className="rounded-xl bg-blue-600 px-5 py-2 text-white hover:bg-blue-700 disabled:opacity-60"
-          >
-            {passwordLoading ? "Saving..." : "Save New Password"}
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="submit"
+              disabled={passwordLoading}
+              className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 sm:w-auto"
+            >
+              {passwordLoading ? "Saving..." : "Save New Password"}
+            </button>
+          </div>
         </form>
 
-        <div className="border-t pt-8">
+        <div className="border-t border-slate-200 pt-8">
           <form onSubmit={handleDelete} className="space-y-4">
-            <h3 className="text-xl font-semibold text-red-600">Delete Profile Permanently</h3>
+            <div>
+              <h3 className="break-words text-lg font-semibold text-red-600 sm:text-xl">
+                Delete Profile Permanently
+              </h3>
 
-            <p className="text-sm text-slate-600">
-              This will delete your account permanently. If you are a poster, your jobs will be removed.
-              If you are a worker, future application cleanup will also be supported.
-            </p>
+              <p className="mt-1 break-words text-sm leading-6 text-slate-600">
+                This will delete your account permanently. If you are a poster,
+                your jobs will be removed. If you are a worker, future
+                application cleanup will also be supported.
+              </p>
+            </div>
 
             {deleteError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="break-words rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {deleteError}
               </div>
             )}
@@ -147,19 +183,24 @@ export default function AccountSettingsModal({ isOpen, onClose, onAfterDelete })
             <input
               type="password"
               value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
+              onChange={(e) => {
+                setDeletePassword(e.target.value);
+                setDeleteError("");
+              }}
               placeholder="Confirm your password"
-              className="w-full rounded-xl border px-4 py-3"
+              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100"
               required
             />
 
-            <button
-              type="submit"
-              disabled={deleteLoading}
-              className="rounded-xl bg-red-600 px-5 py-2 text-white hover:bg-red-700 disabled:opacity-60"
-            >
-              {deleteLoading ? "Deleting..." : "Delete Profile"}
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="submit"
+                disabled={deleteLoading}
+                className="w-full rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 sm:w-auto"
+              >
+                {deleteLoading ? "Deleting..." : "Delete Profile"}
+              </button>
+            </div>
           </form>
         </div>
       </div>

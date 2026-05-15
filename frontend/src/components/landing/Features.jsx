@@ -1,101 +1,96 @@
-import { motion } from "framer-motion";
 import {
-  ArrowLeftRight,
-  Bell,
-  MessageCircle,
-  Shield,
+  BadgeCheck,
+  Briefcase,
+  Clock,
+  MessageSquare,
+  ShieldCheck,
   Star,
-  Zap,
 } from "lucide-react";
 
 const features = [
   {
-    icon: ArrowLeftRight,
-    title: "Dual-Mode Platform",
+    icon: Briefcase,
+    title: "Post and find jobs easily",
     description:
-      "Switch between worker and poster modes with a simple, flexible marketplace experience.",
-    gradient: "from-indigo-500 to-purple-500",
+      "Create job posts, browse available work, apply quickly, and manage everything from one simple dashboard.",
   },
   {
-    icon: Zap,
-    title: "Fast Hiring Flow",
+    icon: MessageSquare,
+    title: "Built-in chat",
     description:
-      "Post jobs, receive applications, and connect the right worker to the right task quickly.",
-    gradient: "from-purple-500 to-pink-500",
+      "Once a worker is selected, both sides can message each other directly about the job.",
   },
   {
-    icon: Shield,
-    title: "Trusted Marketplace",
+    icon: ShieldCheck,
+    title: "Profile-based trust",
     description:
-      "A structured workflow helps both posters and workers move through jobs with confidence.",
-    gradient: "from-pink-500 to-rose-500",
+      "Workers and posters can build profiles with photos, skills, reviews, and completed job history.",
+  },
+  {
+    icon: Clock,
+    title: "Track work progress",
+    description:
+      "Follow job status from open to assigned, completed, reviewed, and paid.",
   },
   {
     icon: Star,
-    title: "Mutual Reviews",
+    title: "Reviews and ratings",
     description:
-      "Build credibility through two-way reviews so both sides can make better decisions.",
-    gradient: "from-rose-500 to-orange-500",
+      "Both sides can leave reviews after completion, helping future users make better choices.",
   },
   {
-    icon: MessageCircle,
-    title: "Real-Time Chat",
+    icon: BadgeCheck,
+    title: "Cleaner workflow",
     description:
-      "Communicate directly once matched so expectations, updates, and delivery stay clear.",
-    gradient: "from-orange-500 to-yellow-500",
-  },
-  {
-    icon: Bell,
-    title: "Live Notifications",
-    description:
-      "Stay updated with applications, selections, reviews, and important job activity instantly.",
-    gradient: "from-yellow-500 to-green-500",
+      "Keep applications, job details, completion confirmation, reviews, and payment flow organised.",
   },
 ];
 
 export default function Features() {
   return (
-    <section id="features" className="py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Everything You Need in{" "}
-            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              One Platform
-            </span>
+    <section
+      id="features"
+      className="bg-white px-4 py-14 sm:px-6 sm:py-18 lg:px-8 lg:py-24"
+    >
+      <div className="mx-auto w-full max-w-7xl">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600">
+            Features
+          </p>
+
+          <h2 className="mt-3 break-words text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
+            Everything needed to manage small jobs properly
           </h2>
 
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Whether you want to work or hire, the platform gives you the key tools to do both.
+          <p className="mt-4 break-words text-sm leading-7 text-slate-600 sm:text-base lg:text-lg">
+            The platform is designed around a simple flow: post work, apply,
+            select, chat, complete, review, and pay.
           </p>
-        </motion.div>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="group relative p-8 bg-gradient-to-br from-gray-50 to-white rounded-3xl hover:shadow-2xl transition-all duration-300 border border-gray-100"
-            >
-              <div
-                className={`inline-flex p-4 rounded-2xl bg-gradient-to-br ${feature.gradient} mb-6 group-hover:scale-110 transition-transform duration-300`}
+        <div className="mt-10 grid gap-5 sm:mt-14 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature) => {
+            const Icon = feature.icon;
+
+            return (
+              <article
+                key={feature.title}
+                className="min-w-0 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:p-6"
               >
-                <feature.icon className="w-8 h-8 text-white" />
-              </div>
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                  <Icon className="h-6 w-6" />
+                </div>
 
-              <h3 className="text-2xl font-semibold mb-3">{feature.title}</h3>
-              <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-            </motion.div>
-          ))}
+                <h3 className="break-words text-lg font-bold text-slate-950 sm:text-xl">
+                  {feature.title}
+                </h3>
+
+                <p className="mt-3 break-words text-sm leading-7 text-slate-600 sm:text-base">
+                  {feature.description}
+                </p>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

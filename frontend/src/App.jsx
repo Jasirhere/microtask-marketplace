@@ -1,24 +1,33 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+
+import ProtectedRoute from "./auth/ProtectedRoute";
+
+import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Me from "./pages/Me";
 import ModeSelect from "./pages/ModeSelect";
+
 import PosterProfileSetup from "./pages/PosterProfileSetup";
 import WorkerProfileSetup from "./pages/WorkerProfileSetup";
+
 import PosterDashboard from "./pages/PosterDashboard";
-import WorkerDashboard from "./pages/WorkerDashboard";
-import ProtectedRoute from "./auth/ProtectedRoute";
 import PosterJobDetail from "./pages/PosterJobDetail";
+import PosterReleasePayment from "./pages/PosterReleasePayment";
+import PosterProfile from "./pages/PosterProfile";
+
+import WorkerDashboard from "./pages/WorkerDashboard";
 import WorkerJobsFeed from "./pages/WorkerJobsFeed";
 import WorkerJobDetail from "./pages/WorkerJobDetail";
 import WorkerMyJobs from "./pages/WorkerMyJobs";
 import WorkerAssignedJobDetail from "./pages/WorkerAssignedJobDetail";
-import ChatPage from "./pages/ChatPage";
-import PosterProfile from "./pages/PosterProfile";
 import WorkerProfile from "./pages/WorkerProfile";
-import LandingPage from "./pages/LandingPage";
-import PosterReleasePayment from "./pages/PosterReleasePayment";
 
+import ChatPage from "./pages/ChatPage";
+
+function ProtectedPage({ children }) {
+  return <ProtectedRoute>{children}</ProtectedRoute>;
+}
 
 export default function App() {
   return (
@@ -31,147 +40,170 @@ export default function App() {
       <Route
         path="/me"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <Me />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
 
       <Route
         path="/mode-select"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <ModeSelect />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
 
       <Route
         path="/setup/poster"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <PosterProfileSetup />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
 
       <Route
         path="/setup/worker"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <WorkerProfileSetup />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
 
       <Route
         path="/poster"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <PosterDashboard />
-          </ProtectedRoute>
+          </ProtectedPage>
+        }
+      />
+
+      <Route
+        path="/poster/jobs/:jobId"
+        element={
+          <ProtectedPage>
+            <PosterJobDetail />
+          </ProtectedPage>
+        }
+      />
+
+      <Route
+        path="/poster/jobs/:jobId/payment"
+        element={
+          <ProtectedPage>
+            <PosterReleasePayment />
+          </ProtectedPage>
+        }
+      />
+
+      <Route
+        path="/poster/profile"
+        element={
+          <ProtectedPage>
+            <PosterProfile />
+          </ProtectedPage>
+        }
+      />
+
+      <Route
+        path="/posters/:userId"
+        element={
+          <ProtectedPage>
+            <PosterProfile />
+          </ProtectedPage>
         }
       />
 
       <Route
         path="/worker"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <WorkerDashboard />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
-      <Route
-        path="/poster/jobs/:jobId"
-        element={
-          <ProtectedRoute>
-            <PosterJobDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/poster/jobs/:jobId/payment"
-        element={
-          <ProtectedRoute>
-            <PosterReleasePayment />
-          </ProtectedRoute>
-        }
-      />
+
       <Route
         path="/worker/jobs"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <WorkerJobsFeed />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
+
       <Route
         path="/worker/jobs/:jobId"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <WorkerJobDetail />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
+
       <Route
         path="/worker/my-jobs"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <WorkerMyJobs />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
+
       <Route
         path="/worker/active-jobs/:jobId"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <WorkerAssignedJobDetail />
-          </ProtectedRoute>
+          </ProtectedPage>
+        }
+      />
+
+      <Route
+        path="/worker/profile"
+        element={
+          <ProtectedPage>
+            <WorkerProfile />
+          </ProtectedPage>
+        }
+      />
+
+      <Route
+        path="/workers/:userId"
+        element={
+          <ProtectedPage>
+            <WorkerProfile />
+          </ProtectedPage>
         }
       />
 
       <Route
         path="/chat"
         element={
-          <ProtectedRoute>
+          <ProtectedPage>
             <ChatPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/poster/profile"
-        element={
-          <ProtectedRoute>
-            <PosterProfile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/worker/profile"
-        element={
-          <ProtectedRoute>
-            <WorkerProfile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/workers/:userId"
-        element={
-          <ProtectedRoute>
-            <WorkerProfile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/posters/:userId"
-        element={
-          <ProtectedRoute>
-            <PosterProfile />
-          </ProtectedRoute>
+          </ProtectedPage>
         }
       />
 
-      <Route path="*" element={<div className="p-6">404</div>} />
+      <Route
+        path="*"
+        element={
+          <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+            <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+              <h1 className="text-2xl font-bold text-slate-900">404</h1>
+
+              <p className="mt-2 text-sm text-slate-600">
+                The page you are looking for does not exist.
+              </p>
+            </div>
+          </div>
+        }
+      />
     </Routes>
   );
 }
