@@ -237,3 +237,116 @@ class JobApplication(Base):
         DateTime(timezone=True),
         nullable=True,
     )    
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=new_uuid,
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+    type: Mapped[str] = mapped_column(String(50), nullable=False)
+    target_mode: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+
+    actor_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    actor_photo_data_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    job_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+    is_read: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=now_utc,
+        index=True,
+        nullable=False,
+    )    
+
+
+class JobCompletion(Base):
+    __tablename__ = "job_completions"
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("jobs.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    poster_confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    worker_confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    job_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=now_utc,
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=now_utc,
+        nullable=False,
+    )    
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=new_uuid,
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("jobs.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+    reviewer_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+    reviewer_role: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    reviewer_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    reviewer_photo_data_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    reviewee_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+
+    reviewee_role: Mapped[str] = mapped_column(String(20), index=True, nullable=False)
+
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    comment: Mapped[str] = mapped_column(Text, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=now_utc,
+        index=True,
+        nullable=False,
+    )    

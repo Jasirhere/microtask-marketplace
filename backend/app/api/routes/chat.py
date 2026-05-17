@@ -1,8 +1,11 @@
 from datetime import datetime, timezone
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 
-from app.api.deps import get_current_user
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user, get_db
+from app.db.session import SessionLocal
 from app.schemas.chat import ChatConversationItem, ChatMessagePublic
 from app.services.application_store import (
     get_selected_application_for_worker_and_job,
@@ -19,6 +22,7 @@ from app.services.chat_store import (
 )
 from app.services.job_store import get_job_by_id, get_jobs_by_poster
 from app.services.user_store import get_by_id
+
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -100,31 +104,44 @@ class UserConnectionManager:
 user_manager = UserConnectionManager()
 
 
-def user_can_access_job_chat(user_id: str, job_id: str) -> bool:
-    job = get_job_by_id(job_id)
+def user_can_access_job_chat(db: Session, user_id: str, job_id: str) -> bool:
+    job = get_job_by_id(db, job_id)
+
     if not job:
         return False
 
     if job.poster_user_id == user_id:
-        selected_app = get_selected_application_for_job(job_id)
+        selected_app = get_selected_application_for_job(db, job_id)
         return selected_app is not None
 
-    selected_worker_app = get_selected_application_for_worker_and_job(user_id, job_id)
+    selected_worker_app = get_selected_application_for_worker_and_job(
+        db,
+        user_id,
+        job_id,
+    )
+
     return selected_worker_app is not None
 
 
 @router.get("/my-chats", response_model=List[ChatConversationItem])
-def get_my_chats(current_user=Depends(get_current_user)):
+def get_my_chats(
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     items: List[ChatConversationItem] = []
 
     if current_user.current_mode == "poster" and current_user.poster_profile is not None:
-        jobs = get_jobs_by_poster(current_user.id)
-        selected_apps = get_selected_applications_for_poster_jobs(current_user.id, jobs)
+        jobs = get_jobs_by_poster(db, current_user.id)
+        selected_apps = get_selected_applications_for_poster_jobs(
+            db,
+            current_user.id,
+            jobs,
+        )
 
         for app in selected_apps:
-            job = get_job_by_id(app.job_id)
-            worker = get_by_id(app.worker_user_id)
-            last_message = get_last_message_for_job(app.job_id)
+            job = get_job_by_id(db, app.job_id)
+            worker = get_by_id(db, app.worker_user_id)
+            last_message = get_last_message_for_job(db, app.job_id)
 
             if not job or not worker or not worker.worker_profile:
                 continue
@@ -141,28 +158,34 @@ def get_my_chats(current_user=Depends(get_current_user)):
                     job_title=job.title,
                     last_message_text=last_message.text if last_message else None,
                     last_message_at=last_message.created_at if last_message else None,
-                    unread_count=get_unread_count_for_job_and_user(job.id, current_user.id),
+                    unread_count=get_unread_count_for_job_and_user(
+                        db,
+                        job.id,
+                        current_user.id,
+                    ),
                     other_user_online=manager.is_online(worker.id),
                     other_user_last_seen_at=manager.get_last_seen(worker.id),
                 )
             )
 
     elif current_user.current_mode == "worker" and current_user.worker_profile is not None:
-        selected_apps = get_selected_applications_for_worker(current_user.id)
+        selected_apps = get_selected_applications_for_worker(db, current_user.id)
 
         for app in selected_apps:
-            job = get_job_by_id(app.job_id)
+            job = get_job_by_id(db, app.job_id)
+
             if not job:
                 continue
 
-            poster = get_by_id(job.poster_user_id)
+            poster = get_by_id(db, job.poster_user_id)
+
             if not poster or not poster.poster_profile:
                 continue
 
             if poster.id == current_user.id:
                 continue
 
-            last_message = get_last_message_for_job(app.job_id)
+            last_message = get_last_message_for_job(db, app.job_id)
 
             items.append(
                 ChatConversationItem(
@@ -173,44 +196,59 @@ def get_my_chats(current_user=Depends(get_current_user)):
                     job_title=job.title,
                     last_message_text=last_message.text if last_message else None,
                     last_message_at=last_message.created_at if last_message else None,
-                    unread_count=get_unread_count_for_job_and_user(job.id, current_user.id),
+                    unread_count=get_unread_count_for_job_and_user(
+                        db,
+                        job.id,
+                        current_user.id,
+                    ),
                     other_user_online=manager.is_online(poster.id),
                     other_user_last_seen_at=manager.get_last_seen(poster.id),
                 )
             )
 
     items.sort(key=lambda x: x.last_message_at or x.job_id, reverse=True)
+
     return items
 
 
 @router.get("/{job_id}", response_model=List[ChatMessagePublic])
-def get_chat_messages(job_id: str, current_user=Depends(get_current_user)):
-    if not user_can_access_job_chat(current_user.id, job_id):
-        raise HTTPException(status_code=403, detail="You are not allowed to access this chat")
+def get_chat_messages(
+    job_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not user_can_access_job_chat(db, current_user.id, job_id):
+        raise HTTPException(
+            status_code=403,
+            detail="You are not allowed to access this chat",
+        )
 
-    mark_messages_seen(job_id, current_user.id)
-    return get_messages_for_job(job_id)
+    mark_messages_seen(db, job_id, current_user.id)
+
+    return get_messages_for_job(db, job_id)
 
 
 @router.websocket("/ws/{job_id}/{user_id}")
 async def chat_websocket(websocket: WebSocket, job_id: str, user_id: str):
-    if not user_can_access_job_chat(user_id, job_id):
-        await websocket.close(code=1008)
-        return
-
-    await manager.connect(job_id, user_id, websocket)
-
-    await manager.broadcast(
-        job_id,
-        {
-            "type": "presence",
-            "user_id": user_id,
-            "online": True,
-            "last_seen_at": None,
-        },
-    )
+    db = SessionLocal()
 
     try:
+        if not user_can_access_job_chat(db, user_id, job_id):
+            await websocket.close(code=1008)
+            return
+
+        await manager.connect(job_id, user_id, websocket)
+
+        await manager.broadcast(
+            job_id,
+            {
+                "type": "presence",
+                "user_id": user_id,
+                "online": True,
+                "last_seen_at": None,
+            },
+        )
+
         while True:
             data = await websocket.receive_json()
             event_type = data.get("type", "message")
@@ -228,7 +266,7 @@ async def chat_websocket(websocket: WebSocket, job_id: str, user_id: str):
 
             if event_type == "seen":
                 viewer_user_id = data.get("user_id")
-                mark_messages_seen(job_id, viewer_user_id)
+                mark_messages_seen(db, job_id, viewer_user_id)
 
                 await manager.broadcast(
                     job_id,
@@ -248,6 +286,7 @@ async def chat_websocket(websocket: WebSocket, job_id: str, user_id: str):
                 continue
 
             message = create_message(
+                db=db,
                 job_id=job_id,
                 sender_user_id=sender_user_id,
                 receiver_user_id=receiver_user_id,
@@ -281,8 +320,12 @@ async def chat_websocket(websocket: WebSocket, job_id: str, user_id: str):
                 else None,
             },
         )
+
     except Exception:
         manager.disconnect(job_id, user_id, websocket)
+
+    finally:
+        db.close()
 
 
 @router.websocket("/ws-global/{user_id}")
@@ -292,5 +335,6 @@ async def global_ws(websocket: WebSocket, user_id: str):
     try:
         while True:
             await websocket.receive_text()
+
     except WebSocketDisconnect:
         user_manager.disconnect(user_id, websocket)

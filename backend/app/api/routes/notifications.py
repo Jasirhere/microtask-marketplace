@@ -1,12 +1,16 @@
 from typing import List, Literal
+
 from fastapi import APIRouter, Depends, Query
-from app.api.deps import get_current_user
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user, get_db
 from app.schemas.notification import NotificationPublic
 from app.services.notification_store import (
     get_notifications_for_user,
     get_unread_count_for_user,
     mark_all_read_for_user,
 )
+
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -15,22 +19,32 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 def get_my_notifications(
     current_user=Depends(get_current_user),
     target_mode: Literal["poster", "worker"] = Query(...),
+    db: Session = Depends(get_db),
 ):
-    return get_notifications_for_user(current_user.id, target_mode)
+    return get_notifications_for_user(db, current_user.id, target_mode)
 
 
 @router.get("/unread-count")
 def get_my_unread_count(
     current_user=Depends(get_current_user),
     target_mode: Literal["poster", "worker"] = Query(...),
+    db: Session = Depends(get_db),
 ):
-    return {"count": get_unread_count_for_user(current_user.id, target_mode)}
+    return {
+        "count": get_unread_count_for_user(
+            db,
+            current_user.id,
+            target_mode,
+        )
+    }
 
 
 @router.post("/mark-all-read")
 def mark_all_notifications_read(
     current_user=Depends(get_current_user),
     target_mode: Literal["poster", "worker"] = Query(...),
+    db: Session = Depends(get_db),
 ):
-    mark_all_read_for_user(current_user.id, target_mode)
+    mark_all_read_for_user(db, current_user.id, target_mode)
+
     return {"message": "All notifications marked as read"}

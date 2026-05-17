@@ -1,12 +1,38 @@
-import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.db.models import Notification
 from app.schemas.notification import NotificationPublic
 
-_notifications: List[NotificationPublic] = []
+
+def _parse_uuid(value: str) -> UUID | None:
+    try:
+        return UUID(value)
+    except ValueError:
+        return None
+
+
+def _to_notification_public(notification: Notification) -> NotificationPublic:
+    return NotificationPublic(
+        id=str(notification.id),
+        user_id=str(notification.user_id),
+        type=notification.type,
+        target_mode=notification.target_mode,
+        title=notification.title,
+        message=notification.message,
+        actor_name=notification.actor_name,
+        actor_photo_data_url=notification.actor_photo_data_url,
+        job_title=notification.job_title,
+        is_read=notification.is_read,
+        created_at=notification.created_at,
+    )
 
 
 def create_notification(
+    db: Session,
     user_id: str,
     type: str,
     target_mode: str,
@@ -16,9 +42,13 @@ def create_notification(
     actor_photo_data_url: Optional[str] = None,
     job_title: Optional[str] = None,
 ) -> NotificationPublic:
-    notification = NotificationPublic(
-        id=str(uuid.uuid4()),
-        user_id=user_id,
+    user_uuid = _parse_uuid(user_id)
+
+    if user_uuid is None:
+        raise ValueError("Invalid user_id")
+
+    notification = Notification(
+        user_id=user_uuid,
         type=type,
         target_mode=target_mode,
         title=title,
@@ -29,31 +59,76 @@ def create_notification(
         is_read=False,
         created_at=datetime.now(timezone.utc),
     )
-    _notifications.append(notification)
-    return notification
+
+    db.add(notification)
+    db.commit()
+    db.refresh(notification)
+
+    return _to_notification_public(notification)
 
 
-def get_notifications_for_user(user_id: str, target_mode: str) -> List[NotificationPublic]:
-    items = [
-        n for n in _notifications
-        if n.user_id == user_id and n.target_mode == target_mode
-    ]
-    items.sort(key=lambda x: x.created_at, reverse=True)
-    return items
+def get_notifications_for_user(
+    db: Session,
+    user_id: str,
+    target_mode: str,
+) -> List[NotificationPublic]:
+    user_uuid = _parse_uuid(user_id)
+
+    if user_uuid is None:
+        return []
+
+    notifications = (
+        db.query(Notification)
+        .filter(
+            Notification.user_id == user_uuid,
+            Notification.target_mode == target_mode,
+        )
+        .order_by(Notification.created_at.desc())
+        .all()
+    )
+
+    return [_to_notification_public(notification) for notification in notifications]
 
 
-def get_unread_count_for_user(user_id: str, target_mode: str) -> int:
-    return len(
-        [
-            n for n in _notifications
-            if n.user_id == user_id
-            and n.target_mode == target_mode
-            and not n.is_read
-        ]
+def get_unread_count_for_user(
+    db: Session,
+    user_id: str,
+    target_mode: str,
+) -> int:
+    user_uuid = _parse_uuid(user_id)
+
+    if user_uuid is None:
+        return 0
+
+    return (
+        db.query(Notification)
+        .filter(
+            Notification.user_id == user_uuid,
+            Notification.target_mode == target_mode,
+            Notification.is_read.is_(False),
+        )
+        .count()
     )
 
 
-def mark_all_read_for_user(user_id: str, target_mode: str) -> None:
-    for n in _notifications:
-        if n.user_id == user_id and n.target_mode == target_mode:
-            n.is_read = True
+def mark_all_read_for_user(
+    db: Session,
+    user_id: str,
+    target_mode: str,
+) -> None:
+    user_uuid = _parse_uuid(user_id)
+
+    if user_uuid is None:
+        return
+
+    (
+        db.query(Notification)
+        .filter(
+            Notification.user_id == user_uuid,
+            Notification.target_mode == target_mode,
+            Notification.is_read.is_(False),
+        )
+        .update({Notification.is_read: True}, synchronize_session=False)
+    )
+
+    db.commit()
