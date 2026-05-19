@@ -1,6 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
-
+from datetime import datetime, timezone
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -271,3 +271,50 @@ def assign_job(
     db.refresh(job)
 
     return _to_job_public(job)
+    
+def save_payment_intent(
+    db: Session,
+    job_id: str,
+    stripe_payment_intent_id: str,
+) -> Optional[JobPublic]:
+    job_uuid = _parse_uuid(job_id)
+
+    if job_uuid is None:
+        return None
+
+    job = db.query(Job).filter(Job.id == job_uuid).first()
+
+    if not job:
+        return None
+
+    job.stripe_payment_intent_id = stripe_payment_intent_id
+
+    db.commit()
+    db.refresh(job)
+
+    return _to_job_public(job)
+
+
+def mark_job_as_paid(
+    db: Session,
+    job_id: str,
+    stripe_payment_intent_id: str,
+) -> Optional[JobPublic]:
+    job_uuid = _parse_uuid(job_id)
+
+    if job_uuid is None:
+        return None
+
+    job = db.query(Job).filter(Job.id == job_uuid).first()
+
+    if not job:
+        return None
+
+    job.payment_status = "PAID"
+    job.paid_at = datetime.now(timezone.utc)
+    job.stripe_payment_intent_id = stripe_payment_intent_id
+
+    db.commit()
+    db.refresh(job)
+
+    return _to_job_public(job)    

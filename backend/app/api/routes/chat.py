@@ -130,7 +130,7 @@ def get_my_chats(
 ):
     items: List[ChatConversationItem] = []
 
-    if current_user.current_mode == "poster" and current_user.poster_profile is not None:
+    if current_user.poster_profile is not None:
         jobs = get_jobs_by_poster(db, current_user.id)
         selected_apps = get_selected_applications_for_poster_jobs(
             db,
@@ -168,7 +168,7 @@ def get_my_chats(
                 )
             )
 
-    elif current_user.current_mode == "worker" and current_user.worker_profile is not None:
+    if current_user.worker_profile is not None:
         selected_apps = get_selected_applications_for_worker(db, current_user.id)
 
         for app in selected_apps:

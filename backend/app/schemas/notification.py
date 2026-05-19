@@ -8,6 +8,8 @@ NotificationType = Literal[
     "APPLICATION_REJECTED",
     "NEW_REVIEW",
     "JOB_COMPLETION_UPDATE",
+    "PAYMENT_RECEIVED",
+    "PAYMENT_SENT",
 ]
 
 NotificationTargetMode = Literal["poster", "worker"]

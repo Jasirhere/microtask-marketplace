@@ -178,7 +178,7 @@ def get_applications_for_job_route(
 
     for app in get_applications_for_job(db, job_id):
         worker = get_by_id(db, app.worker_user_id)
-        review_summary = get_user_review_summary(app.worker_user_id, "worker")
+        review_summary = get_user_review_summary(db, app.worker_user_id, "worker")
 
         applicants.append(
             PosterApplicantItem(
