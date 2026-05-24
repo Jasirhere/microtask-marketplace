@@ -88,7 +88,21 @@ function StripeCheckoutForm({
             ${Number(amount).toFixed(2)}
           </span>
         </div>
+        <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+          <p className="mb-2 font-semibold">Test card details</p>
 
+          <div className="space-y-1">
+            <p><span className="font-medium">Card:</span> 4242 4242 4242 4242</p>
+            <p><span className="font-medium">Expiry:</span> 10/36</p>
+            <p><span className="font-medium">CVC:</span> 123</p>
+            <p><span className="font-medium">Name:</span> Test User</p>
+            <p><span className="font-medium">Email:</span> testuser@gmail.com</p>
+          </div>
+
+          <p className="mt-2 text-xs text-blue-700">
+            Use these details only in Stripe test mode.
+          </p>
+        </div>
         <div className="min-w-0">
           <PaymentElement />
         </div>

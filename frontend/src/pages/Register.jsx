@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { register } from "../api/auth";
-import { useAuth } from "../auth/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Hammer, Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -12,7 +11,6 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { setToken, reload } = useAuth();
   const navigate = useNavigate();
 
   async function onSubmit(e) {
@@ -21,10 +19,13 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const data = await register(email, password);
-      setToken(data.access_token);
-      await reload();
-      navigate("/mode-select");
+      await register(email, password);
+
+      navigate("/login", {
+        state: {
+          successMessage: "Account created successfully. Please log in.",
+        },
+      });
     } catch (err) {
       setError(err?.response?.data?.detail || "Register failed");
     } finally {
